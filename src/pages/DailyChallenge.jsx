@@ -58,7 +58,7 @@ export default function DailyChallenge() {
   const progress = ((currentQuestion + 1) / challenges.length) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 py-8">
+    <div className="py-8 animate-fade-in">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -100,7 +100,7 @@ export default function DailyChallenge() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4" />
-                  <span className="text-sm">ไม่มีเวลา限制</span>
+                  <span className="text-sm">ไม่มีเวลาจำกัด</span>
                 </div>
               </div>
               <div className="flex items-center space-x-4 text-sm">
@@ -136,7 +136,7 @@ export default function DailyChallenge() {
                     className={`p-6 rounded-xl border-2 transition-all duration-200 ${
                       answers[currentChallenge.id] === true
                         ? 'border-green-500 bg-green-50 text-green-700'
-                        : 'border-gray-200 hover:border-green-300 hover:bg-green-25'
+                        : 'border-gray-200 hover:border-green-300 hover:bg-green-50/60 hover:shadow-sm'
                     }`}
                   >
                     <div className="flex items-center justify-center space-x-3">
@@ -153,7 +153,7 @@ export default function DailyChallenge() {
                     className={`p-6 rounded-xl border-2 transition-all duration-200 ${
                       answers[currentChallenge.id] === false
                         ? 'border-red-500 bg-red-50 text-red-700'
-                        : 'border-gray-200 hover:border-red-300 hover:bg-red-25'
+                        : 'border-gray-200 hover:border-red-300 hover:bg-red-50/60 hover:shadow-sm'
                     }`}
                   >
                     <div className="flex items-center justify-center space-x-3">
@@ -192,7 +192,7 @@ export default function DailyChallenge() {
                 {currentQuestion < challenges.length - 1 ? (
                   <button
                     onClick={() => setCurrentQuestion(currentQuestion + 1)}
-                    disabled={!answers[currentChallenge.id]}
+                    disabled={answers[currentChallenge.id] === undefined}
                     className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
                   >
                     ถัดไป
@@ -200,7 +200,7 @@ export default function DailyChallenge() {
                 ) : (
                   <button
                     onClick={handleSubmit}
-                    disabled={!answers[currentChallenge.id]}
+                    disabled={answers[currentChallenge.id] === undefined}
                     className="px-8 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 flex items-center space-x-2"
                   >
                     <Trophy className="h-5 w-5" />

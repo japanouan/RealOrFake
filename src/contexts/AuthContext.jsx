@@ -7,7 +7,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
+import { auth, fs } from '../firebase';
 
 const AuthContext = createContext();
 
@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
       });
 
       // Create user document in Firestore with role
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
+      await setDoc(doc(fs, 'users', userCredential.user.uid), {
         uid: userCredential.user.uid,
         email: email,
         username: username,
@@ -91,10 +91,16 @@ export function AuthProvider({ children }) {
         return userEmail.toLowerCase().includes('admin') ? 'admin' : 'user';
       }
 
-      const userDoc = await getDoc(doc(db, 'users', uid));
+      const userRef = doc(fs, 'users', uid);
+      const userDoc = await getDoc(userRef);
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        console.log('User role from Firestore:', userData.role);
+        const email = auth.currentUser?.email?.toLowerCase() || '';
+        // Auto-elevate admin account if needed
+        if (email === 'admin888@gmail.com' && userData.role !== 'admin') {
+          await setDoc(userRef, { role: 'admin' }, { merge: true });
+          return 'admin';
+        }
         return userData.role || 'user';
       }
       
@@ -104,7 +110,7 @@ export function AuthProvider({ children }) {
       const defaultRole = userEmail.toLowerCase().includes('admin') ? 'admin' : 'user';
       console.log('Creating user document with email:', userEmail, 'role:', defaultRole);
       
-      await setDoc(doc(db, 'users', uid), {
+      await setDoc(userRef, {
         uid: uid,
         email: userEmail,
         username: auth.currentUser?.displayName || 'User',
@@ -129,7 +135,7 @@ export function AuthProvider({ children }) {
   // Update user stats
   async function updateUserStats(uid, stats) {
     try {
-      await setDoc(doc(db, 'users', uid), {
+      await setDoc(doc(fs, 'users', uid), {
         stats: stats
       }, { merge: true });
     } catch (error) {

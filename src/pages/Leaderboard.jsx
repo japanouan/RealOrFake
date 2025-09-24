@@ -92,7 +92,7 @@ export default function Leaderboard() {
   const currentData = leaderboardData[activeTab];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 py-8">
+    <div className="py-8 animate-fade-in">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
@@ -117,10 +117,11 @@ export default function Leaderboard() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-medium transition-all duration-200 ${
-                        activeTab === tab.id
-                          ? "bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-lg"
-                          : "text-gray-700 hover:text-yellow-600"
-                      }`}
+  activeTab === tab.id
+    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+    : "text-gray-700 hover:text-blue-600"
+}`}
+
                     >
                       <IconComponent className="h-5 w-5" />
                       <span>{tab.label}</span>

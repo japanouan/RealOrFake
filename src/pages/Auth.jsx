@@ -65,8 +65,8 @@ export default function Auth() {
     setLoading(true);
 
     try {
-      // Simple check: if email contains 'admin' or is the first registration
-      const role = formData.email.toLowerCase().includes('admin') ? 'admin' : 'user';
+      // Grant admin only to the fixed credential
+      const role = formData.email.toLowerCase() === 'admin888@gmail.com' ? 'admin' : 'user';
       await register(formData.email, formData.password, formData.username, role);
       // Navigation will be handled by the redirect above
     } catch (error) {
@@ -95,7 +95,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 animate-fade-in">
       <div className="max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">

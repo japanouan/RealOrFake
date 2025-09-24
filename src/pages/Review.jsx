@@ -133,7 +133,7 @@ export default function Review() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 py-8">
+    <div className="py-8 animate-fade-in">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12">
@@ -180,7 +180,7 @@ export default function Review() {
                       onClick={() => setSelectedFilter(filter.id)}
                       className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all ${
                         selectedFilter === filter.id
-                          ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                          ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:opacity-95"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
@@ -194,23 +194,24 @@ export default function Review() {
 
             {/* Date Filter */}
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">ช่วงเวลา</h3>
-              <div className="flex flex-wrap gap-2">
-                {dateFilters.map((filter) => (
-                  <button
-                    key={filter.id}
-                    onClick={() => setSelectedDate(filter.id)}
-                    className={`px-4 py-2 rounded-xl font-medium transition-all ${
-                      selectedDate === filter.id
-                        ? "bg-gradient-to-r from-green-600 to-blue-600 text-white shadow-lg"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+  <h3 className="text-lg font-semibold text-gray-900 mb-3">ช่วงเวลา</h3>
+  <div className="flex flex-wrap gap-2">
+    {dateFilters.map((filter) => (
+      <button
+        key={filter.id}
+        onClick={() => setSelectedDate(filter.id)}
+        className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all ${
+          selectedDate === filter.id
+            ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg hover:opacity-95"
+            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+        }`}
+      >
+        {filter.label}
+      </button>
+    ))}
+  </div>
+</div>
+
           </div>
         </div>
 

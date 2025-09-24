@@ -6,6 +6,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 
 import NavBar from "./components/NavBar.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Layout from "./components/Layout.jsx";
 import Home from "./pages/Home.jsx";
 import Auth from "./pages/Auth.jsx";
 import DailyChallenge from "./pages/DailyChallenge.jsx";
@@ -25,6 +26,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <NavBar />
+        <Layout>
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={
@@ -63,6 +65,7 @@ function App() {
             </ProtectedRoute>
           } />
         </Routes>
+        </Layout>
       </BrowserRouter>
     </AuthProvider>
   );

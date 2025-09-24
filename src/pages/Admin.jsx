@@ -347,7 +347,7 @@ export default function Admin() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 py-8">
+    <div className="py-8 animate-fade-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -378,11 +378,12 @@ export default function Admin() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                    activeTab === tab.id
-                      ? "bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg"
-                      : "text-gray-700 hover:text-orange-600"
-                  }`}
+                  className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-medium transition-all duration-200 ${
+  activeTab === tab.id
+    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+    : "text-gray-700 hover:text-blue-600"
+}`}
+
                 >
                   <IconComponent className="h-5 w-5" />
                   <span>{tab.label}</span>

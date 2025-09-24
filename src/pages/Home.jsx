@@ -88,7 +88,7 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50">
+    <div className="py-8 animate-fade-in">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
@@ -264,47 +264,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="col-span-2">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-xl">
-                  <Shield className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xl font-bold">TruthCheck</span>
-              </div>
-              <p className="text-gray-400 mb-4">
-                แพลตฟอร์มฝึกแยกข่าวจริง-ปลอมด้วย AI เพื่อสร้างสังคมที่มีวิจารณญาณ
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">เมนู</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><button onClick={() => navigate('/challenge')} className="hover:text-white transition-colors">Daily Challenge</button></li>
-                <li><button onClick={() => navigate('/learn')} className="hover:text-white transition-colors">เรียนรู้</button></li>
-                <li><button onClick={() => navigate('/leaderboard')} className="hover:text-white transition-colors">อันดับ</button></li>
-                <li><button onClick={() => navigate('/review')} className="hover:text-white transition-colors">ประวัติ</button></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">ติดต่อ</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">เกี่ยวกับเรา</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">นโยบาย</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">ช่วยเหลือ</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2025 TruthCheck. สงวนลิขสิทธิ์.</p>
-          </div>
-        </div>
-      </footer>
+      {/* Footer moved to Layout */}
     </div>
   );
 };
