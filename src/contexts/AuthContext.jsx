@@ -20,6 +20,16 @@ export function AuthProvider({ children }) {
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Check if Firestore is available
+  const isFirestoreAvailable = () => {
+    try {
+      return db && typeof db === 'object';
+    } catch (error) {
+      console.error('Firestore not available:', error);
+      return false;
+    }
+  };
+
   // Register new user
   async function register(email, password, username, role = 'user') {
     try {
@@ -74,10 +84,35 @@ export function AuthProvider({ children }) {
   // Get user role from Firestore
   async function getUserRole(uid) {
     try {
+      // Check if Firestore is available
+      if (!isFirestoreAvailable()) {
+        console.log('Firestore not available, using default role');
+        return 'user';
+      }
+
       const userDoc = await getDoc(doc(db, 'users', uid));
       if (userDoc.exists()) {
-        return userDoc.data().role;
+        const userData = userDoc.data();
+        return userData.role || 'user';
       }
+      
+      // If user document doesn't exist, create it with default role
+      console.log('User document not found, creating default user document...');
+      await setDoc(doc(db, 'users', uid), {
+        uid: uid,
+        email: auth.currentUser?.email || '',
+        username: auth.currentUser?.displayName || 'User',
+        role: 'user',
+        createdAt: new Date(),
+        stats: {
+          totalQuestions: 0,
+          correctAnswers: 0,
+          accuracy: 0,
+          streak: 0,
+          badges: []
+        }
+      });
+      
       return 'user'; // Default role
     } catch (error) {
       console.error('Error getting user role:', error);
@@ -98,19 +133,45 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setCurrentUser(user);
-        // Get user role from Firestore
-        const role = await getUserRole(user.uid);
-        setUserRole(role);
-      } else {
+      try {
+        if (user) {
+          setCurrentUser(user);
+          // Get user role from Firestore with timeout
+          try {
+            const role = await Promise.race([
+              getUserRole(user.uid),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 10000)
+              )
+            ]);
+            setUserRole(role);
+          } catch (error) {
+            console.error('Error getting user role:', error);
+            setUserRole('user'); // Default role on error
+          }
+        } else {
+          setCurrentUser(null);
+          setUserRole(null);
+        }
+      } catch (error) {
+        console.error('Error in auth state change:', error);
         setCurrentUser(null);
         setUserRole(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return unsubscribe;
+    // Fallback timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      console.log('Auth loading timeout - setting loading to false');
+      setLoading(false);
+    }, 15000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timeoutId);
+    };
   }, []);
 
   const value = {
@@ -124,7 +185,35 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          background: 'var(--gray-50)',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          <div style={{
+            fontSize: '3rem',
+            animation: 'spin 1s linear infinite'
+          }}>⏳</div>
+          <div style={{
+            fontSize: '1.2rem',
+            color: 'var(--gray-600)',
+            fontWeight: '500'
+          }}>กำลังโหลด...</div>
+          <style>{`
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+          `}</style>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }
