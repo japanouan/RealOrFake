@@ -1,306 +1,297 @@
 import React, { useState } from "react";
+import { Trophy, Medal, Crown, Star, TrendingUp, Award, Target, Zap } from "lucide-react";
 
 export default function Leaderboard() {
-  const [activeTab, setActiveTab] = useState("leaderboard");
+  const [activeTab, setActiveTab] = useState("weekly");
 
-  // Mock data
-  const leaderboardData = [
-    { rank: 1, name: "ผู้ใช้ A", streak: 30, accuracy: 95, badges: 8, avatar: "🥇" },
-    { rank: 2, name: "ผู้ใช้ B", streak: 25, accuracy: 92, badges: 6, avatar: "🥈" },
-    { rank: 3, name: "ผู้ใช้ C", streak: 20, accuracy: 89, badges: 5, avatar: "🥉" },
-    { rank: 4, name: "ผู้ใช้ D", streak: 15, accuracy: 87, badges: 4, avatar: "🏅" },
-    { rank: 5, name: "คุณ", streak: 7, accuracy: 85, badges: 3, avatar: "👤" },
+  const tabs = [
+    { id: "weekly", label: "สัปดาห์นี้", icon: TrendingUp },
+    { id: "monthly", label: "เดือนนี้", icon: Trophy },
+    { id: "alltime", label: "ตลอดกาล", icon: Crown }
   ];
+
+  const leaderboardData = {
+    weekly: [
+      { rank: 1, name: "TruthSeeker", accuracy: 95, streak: 7, points: 850, badge: "Crown" },
+      { rank: 2, name: "FactChecker", accuracy: 92, streak: 6, points: 780, badge: "Gold" },
+      { rank: 3, name: "NewsGuard", accuracy: 90, streak: 5, points: 720, badge: "Silver" },
+      { rank: 4, name: "VerifyMaster", accuracy: 88, streak: 4, points: 680, badge: "Bronze" },
+      { rank: 5, name: "InfoDetective", accuracy: 85, streak: 3, points: 650, badge: "Bronze" }
+    ],
+    monthly: [
+      { rank: 1, name: "TruthSeeker", accuracy: 94, streak: 28, points: 3200, badge: "Crown" },
+      { rank: 2, name: "FactChecker", accuracy: 91, streak: 25, points: 2900, badge: "Gold" },
+      { rank: 3, name: "NewsGuard", accuracy: 89, streak: 22, points: 2700, badge: "Silver" },
+      { rank: 4, name: "VerifyMaster", accuracy: 87, streak: 20, points: 2500, badge: "Bronze" },
+      { rank: 5, name: "InfoDetective", accuracy: 84, streak: 18, points: 2300, badge: "Bronze" }
+    ],
+    alltime: [
+      { rank: 1, name: "TruthSeeker", accuracy: 93, streak: 365, points: 45000, badge: "Crown" },
+      { rank: 2, name: "FactChecker", accuracy: 90, streak: 320, points: 42000, badge: "Gold" },
+      { rank: 3, name: "NewsGuard", accuracy: 88, streak: 280, points: 39000, badge: "Silver" },
+      { rank: 4, name: "VerifyMaster", accuracy: 86, streak: 250, points: 36000, badge: "Bronze" },
+      { rank: 5, name: "InfoDetective", accuracy: 83, streak: 220, points: 33000, badge: "Bronze" }
+    ]
+  };
 
   const achievements = [
-    { id: 1, title: "🔥 Fire Starter", description: "ทำ streak 7 วันติด", icon: "🔥", unlocked: true, progress: 100 },
-    { id: 2, title: "💎 Diamond Detective", description: "ทำ streak 30 วันติด", icon: "💎", unlocked: false, progress: 23 },
-    { id: 3, title: "🎯 Sharp Shooter", description: "ความแม่นยำ 95% ขึ้น", icon: "🎯", unlocked: false, progress: 85 },
-    { id: 4, title: "🧠 Critical Thinker", description: "ทำข้อทดสอบ 100 ข้อ", icon: "🧠", unlocked: false, progress: 15 },
-    { id: 5, title: "📚 Knowledge Seeker", description: "อ่านบทความเรียนรู้ 50 บทความ", icon: "📚", unlocked: false, progress: 20 },
-    { id: 6, title: "🌟 Super Star", description: "ติดอันดับ 1 ในรอบสัปดาห์", icon: "🌟", unlocked: false, progress: 0 },
+    {
+      id: 1,
+      title: "Truth Seeker",
+      description: "ทำความแม่นยำ 90% ขึ้นไป 7 วันติดต่อกัน",
+      icon: Target,
+      unlocked: true,
+      progress: 100
+    },
+    {
+      id: 2,
+      title: "Streak Master",
+      description: "ทำ Daily Challenge 30 วันติดต่อกัน",
+      icon: Zap,
+      unlocked: false,
+      progress: 70
+    },
+    {
+      id: 3,
+      title: "Accuracy King",
+      description: "ทำความแม่นยำ 95% ขึ้นไปใน 1 สัปดาห์",
+      icon: Award,
+      unlocked: false,
+      progress: 45
+    }
   ];
 
-  const badges = [
-    { id: 1, title: "ข่าวสุขภาพ", icon: "🏥", count: 5, description: "ผ่านการทดสอบข่าวสุขภาพ 5 ข้อ" },
-    { id: 2, title: "ข่าวการเมือง", icon: "🏛️", count: 3, description: "ผ่านการทดสอบข่าวการเมือง 3 ข้อ" },
-    { id: 3, title: "ข่าววิทยาศาสตร์", icon: "🔬", count: 2, description: "ผ่านการทดสอบข่าววิทยาศาสตร์ 2 ข้อ" },
-  ];
+  const getRankIcon = (rank) => {
+    switch (rank) {
+      case 1:
+        return <Crown className="h-6 w-6 text-yellow-500" />;
+      case 2:
+        return <Medal className="h-6 w-6 text-gray-400" />;
+      case 3:
+        return <Medal className="h-6 w-6 text-amber-600" />;
+      default:
+        return <span className="text-lg font-bold text-gray-600">#{rank}</span>;
+    }
+  };
+
+  const getBadgeColor = (badge) => {
+    switch (badge) {
+      case "Crown":
+        return "bg-gradient-to-r from-yellow-400 to-yellow-600";
+      case "Gold":
+        return "bg-gradient-to-r from-yellow-500 to-yellow-700";
+      case "Silver":
+        return "bg-gradient-to-r from-gray-400 to-gray-600";
+      case "Bronze":
+        return "bg-gradient-to-r from-amber-600 to-amber-800";
+      default:
+        return "bg-gradient-to-r from-blue-500 to-blue-700";
+    }
+  };
+
+  const currentData = leaderboardData[activeTab];
 
   return (
-    <main>
-      <div style={{ maxWidth: "800px", margin: "2rem auto", padding: "2rem" }}>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <h1 style={{ marginBottom: "0.5rem", color: "var(--gray-800)" }}>
-            🏆 Leaderboard & Achievements
-          </h1>
-          <p style={{ color: "var(--gray-600)" }}>
-            ติดตามความคืบหน้าและแข่งขันกับเพื่อน
-          </p>
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center space-x-2 bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
+            <Trophy className="h-4 w-4" />
+            <span>Leaderboard</span>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">อันดับและความสำเร็จ</h1>
+          <p className="text-lg text-gray-600">แข่งขันกับผู้ใช้คนอื่นและปลดล็อกความสำเร็จใหม่ๆ</p>
         </div>
 
-        {/* Tab Navigation */}
-        <div style={{
-          display: "flex",
-          gap: "0.5rem",
-          marginBottom: "2rem",
-          background: "var(--gray-100)",
-          padding: "0.25rem",
-          borderRadius: "0.5rem"
-        }}>
-          <button
-            onClick={() => setActiveTab("leaderboard")}
-            style={{
-              flex: 1,
-              padding: "0.75rem",
-              border: "none",
-              borderRadius: "0.25rem",
-              background: activeTab === "leaderboard" ? "white" : "transparent",
-              cursor: "pointer",
-              fontWeight: "500"
-            }}
-          >
-            🏆 อันดับ
-          </button>
-          <button
-            onClick={() => setActiveTab("achievements")}
-            style={{
-              flex: 1,
-              padding: "0.75rem",
-              border: "none",
-              borderRadius: "0.25rem",
-              background: activeTab === "achievements" ? "white" : "transparent",
-              cursor: "pointer",
-              fontWeight: "500"
-            }}
-          >
-            🎖️ ภารกิจ
-          </button>
-          <button
-            onClick={() => setActiveTab("badges")}
-            style={{
-              flex: 1,
-              padding: "0.75rem",
-              border: "none",
-              borderRadius: "0.25rem",
-              background: activeTab === "badges" ? "white" : "transparent",
-              cursor: "pointer",
-              fontWeight: "500"
-            }}
-          >
-            🏅 เหรียญตรา
-          </button>
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Leaderboard */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Tab Navigation */}
+            <div className="bg-white rounded-2xl shadow-lg p-2">
+              <div className="flex">
+                {tabs.map((tab) => {
+                  const IconComponent = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-medium transition-all duration-200 ${
+                        activeTab === tab.id
+                          ? "bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-lg"
+                          : "text-gray-700 hover:text-yellow-600"
+                      }`}
+                    >
+                      <IconComponent className="h-5 w-5" />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Leaderboard List */}
+            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+              <div className="bg-gradient-to-r from-yellow-500 to-orange-600 p-6 text-white">
+                <h2 className="text-2xl font-bold mb-2">🏆 อันดับ{activeTab === "weekly" ? "สัปดาห์นี้" : activeTab === "monthly" ? "เดือนนี้" : "ตลอดกาล"}</h2>
+                <p className="opacity-90">ผู้เล่นที่มีผลงานดีที่สุด</p>
+              </div>
+
+              <div className="divide-y divide-gray-100">
+                {currentData.map((player, index) => (
+                  <div key={index} className={`p-6 flex items-center space-x-6 ${
+                    player.rank <= 3 ? 'bg-gradient-to-r from-yellow-50 to-orange-50' : ''
+                  }`}>
+                    {/* Rank */}
+                    <div className="flex items-center justify-center w-12 h-12">
+                      {getRankIcon(player.rank)}
+                    </div>
+
+                    {/* Avatar & Name */}
+                    <div className="flex items-center space-x-4 flex-1">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold ${getBadgeColor(player.badge)}`}>
+                        {player.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">{player.name}</h3>
+                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getBadgeColor(player.badge)} text-white`}>
+                          {player.badge}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-gray-900">{player.points.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600">คะแนน</div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-green-600">{player.accuracy}%</div>
+                      <div className="text-sm text-gray-600">ความแม่นยำ</div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-lg font-semibold text-blue-600">{player.streak}</div>
+                      <div className="text-sm text-gray-600">วันติดต่อกัน</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Achievements & Stats */}
+          <div className="space-y-8">
+            {/* Personal Stats */}
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">สถิติของคุณ</h3>
+              
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">อันดับปัจจุบัน</span>
+                  <span className="text-2xl font-bold text-gray-900">#15</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">คะแนนรวม</span>
+                  <span className="text-2xl font-bold text-gray-900">2,450</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">ความแม่นยำ</span>
+                  <span className="text-2xl font-bold text-green-600">87%</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600">Streak ปัจจุบัน</span>
+                  <span className="text-2xl font-bold text-blue-600">12 วัน</span>
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-gray-600">ความก้าวหน้า</span>
+                  <span className="text-sm font-medium text-gray-900">87%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 h-3 rounded-full transition-all duration-1000" style={{width: '87%'}}></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Achievements */}
+            <div className="bg-white rounded-2xl shadow-xl p-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">ความสำเร็จ</h3>
+              
+              <div className="space-y-4">
+                {achievements.map((achievement) => {
+                  const IconComponent = achievement.icon;
+                  return (
+                    <div key={achievement.id} className={`p-4 rounded-xl border-2 transition-all ${
+                      achievement.unlocked 
+                        ? 'border-green-200 bg-green-50' 
+                        : 'border-gray-200 bg-gray-50'
+                    }`}>
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                          achievement.unlocked 
+                            ? 'bg-gradient-to-r from-green-500 to-green-600' 
+                            : 'bg-gray-300'
+                        }`}>
+                          <IconComponent className={`h-5 w-5 ${
+                            achievement.unlocked ? 'text-white' : 'text-gray-500'
+                          }`} />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className={`font-semibold ${
+                            achievement.unlocked ? 'text-gray-900' : 'text-gray-500'
+                          }`}>
+                            {achievement.title}
+                          </h4>
+                          <p className={`text-sm ${
+                            achievement.unlocked ? 'text-gray-600' : 'text-gray-400'
+                          }`}>
+                            {achievement.description}
+                          </p>
+                        </div>
+                        {achievement.unlocked ? (
+                          <Star className="h-5 w-5 text-yellow-500" />
+                        ) : (
+                          <span className="text-xs text-gray-400">{achievement.progress}%</span>
+                        )}
+                      </div>
+                      
+                      {!achievement.unlocked && (
+                        <div className="mt-3">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div 
+                              className="bg-gradient-to-r from-blue-500 to-purple-500 h-2 rounded-full transition-all duration-500"
+                              style={{width: `${achievement.progress}%`}}
+                            ></div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+              <h3 className="text-xl font-bold mb-4">เพิ่มอันดับของคุณ</h3>
+              <p className="text-blue-100 mb-6">
+                ทำ Daily Challenge ทุกวันเพื่อเพิ่มคะแนนและความแม่นยำ
+              </p>
+              <button className="w-full bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors">
+                เริ่ม Daily Challenge
+              </button>
+            </div>
+          </div>
         </div>
-
-        {/* Leaderboard Tab */}
-        {activeTab === "leaderboard" && (
-          <div>
-            <div className="card">
-              <h2 style={{ marginBottom: "1.5rem", color: "var(--gray-800)" }}>
-                🏆 อันดับผู้เล่น
-              </h2>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {leaderboardData.map((player, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "1rem",
-                      padding: "1rem",
-                      background: player.name === "คุณ" ? "var(--primary-color)" : "var(--gray-50)",
-                      color: player.name === "คุณ" ? "white" : "var(--gray-800)",
-                      borderRadius: "0.5rem",
-                      border: player.name === "คุณ" ? "2px solid var(--primary-color)" : "none"
-                    }}
-                  >
-                    <div style={{ fontSize: "1.5rem", fontWeight: "bold", minWidth: "2rem" }}>
-                      {player.avatar}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.1rem" }}>
-                        {player.name}
-                      </h3>
-                      <div style={{
-                        display: "flex",
-                        gap: "1rem",
-                        fontSize: "0.875rem",
-                        opacity: 0.8
-                      }}>
-                        <span>🔥 {player.streak} วัน</span>
-                        <span>🎯 {player.accuracy}%</span>
-                        <span>🏅 {player.badges}</span>
-                      </div>
-                    </div>
-                    <div style={{
-                      fontSize: "1.5rem",
-                      fontWeight: "bold",
-                      color: player.rank <= 3 ? "var(--warning-color)" : "inherit"
-                    }}>
-                      #{player.rank}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Weekly Stats */}
-            <div className="card">
-              <h3 style={{ marginBottom: "1.5rem", color: "var(--gray-800)" }}>
-                📊 สถิติสัปดาห์นี้
-              </h3>
-              <div className="stats-grid">
-                <div className="stat-card">
-                  <span className="stat-number">156</span>
-                  <span className="stat-label">ผู้เล่นที่เข้าร่วม</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-number">87%</span>
-                  <span className="stat-label">ความแม่นยำเฉลี่ย</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-number">12</span>
-                  <span className="stat-label">Streak สูงสุด</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-number">45</span>
-                  <span className="stat-label">Badge ใหม่</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Achievements Tab */}
-        {activeTab === "achievements" && (
-          <div>
-            <div className="card">
-              <h2 style={{ marginBottom: "1.5rem", color: "var(--gray-800)" }}>
-                🎖️ ภารกิจและความสำเร็จ
-              </h2>
-              
-              <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-                {achievements.map((achievement) => (
-                  <div
-                    key={achievement.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "1rem",
-                      padding: "1rem",
-                      background: achievement.unlocked ? "var(--success-color)" : "var(--gray-50)",
-                      color: achievement.unlocked ? "white" : "var(--gray-800)",
-                      borderRadius: "0.5rem",
-                      border: achievement.unlocked ? "2px solid var(--success-color)" : "1px solid var(--gray-200)"
-                    }}
-                  >
-                    <div style={{ fontSize: "2rem" }}>{achievement.icon}</div>
-                    <div style={{ flex: 1 }}>
-                      <h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.1rem" }}>
-                        {achievement.title}
-                      </h3>
-                      <p style={{ margin: "0 0 0.5rem 0", opacity: 0.8, fontSize: "0.9rem" }}>
-                        {achievement.description}
-                      </p>
-                      <div style={{
-                        background: "rgba(0,0,0,0.2)",
-                        borderRadius: "0.25rem",
-                        height: "0.5rem",
-                        overflow: "hidden"
-                      }}>
-                        <div style={{
-                          background: "white",
-                          height: "100%",
-                          width: `${achievement.progress}%`,
-                          transition: "width 0.3s ease"
-                        }}></div>
-                      </div>
-                      <p style={{ margin: "0.25rem 0 0 0", fontSize: "0.8rem", opacity: 0.7 }}>
-                        {achievement.progress}%
-                      </p>
-                    </div>
-                    <div style={{ fontSize: "1.5rem" }}>
-                      {achievement.unlocked ? "✅" : "🔒"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Badges Tab */}
-        {activeTab === "badges" && (
-          <div>
-            <div className="card">
-              <h2 style={{ marginBottom: "1.5rem", color: "var(--gray-800)" }}>
-                🏅 เหรียญตราและความสำเร็จ
-              </h2>
-              
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "1.5rem"
-              }}>
-                {badges.map((badge) => (
-                  <div
-                    key={badge.id}
-                    style={{
-                      textAlign: "center",
-                      padding: "1.5rem",
-                      background: "var(--gray-50)",
-                      borderRadius: "1rem",
-                      border: "2px solid var(--gray-200)"
-                    }}
-                  >
-                    <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>
-                      {badge.icon}
-                    </div>
-                    <h3 style={{ marginBottom: "0.5rem", color: "var(--gray-800)" }}>
-                      {badge.title}
-                    </h3>
-                    <p style={{ marginBottom: "1rem", color: "var(--gray-600)", fontSize: "0.9rem" }}>
-                      {badge.description}
-                    </p>
-                    <div className="badge badge-success">
-                      {badge.count} ข้อ
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Progress Summary */}
-            <div className="card">
-              <h3 style={{ marginBottom: "1.5rem", color: "var(--gray-800)" }}>
-                📈 ความคืบหน้าของคุณ
-              </h3>
-              <div className="stats-grid">
-                <div className="stat-card">
-                  <span className="stat-number">7</span>
-                  <span className="stat-label">Streak วัน</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-number">15</span>
-                  <span className="stat-label">ข้อที่ทำแล้ว</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-number">85%</span>
-                  <span className="stat-label">ความแม่นยำ</span>
-                </div>
-                <div className="stat-card">
-                  <span className="stat-number">3</span>
-                  <span className="stat-label">Badge ที่ได้</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
-    </main>
+    </div>
   );
 }
-
-

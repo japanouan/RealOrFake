@@ -1,293 +1,321 @@
 import React, { useState } from "react";
+import { BookOpen, Lightbulb, Shield, Search, Link, BarChart3, Users, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
 
 export default function Learn() {
-  const [activeCategory, setActiveCategory] = useState("basics");
+  const [activeTab, setActiveTab] = useState("tips");
 
-  const categories = [
-    { id: "basics", name: "พื้นฐาน", icon: "📚" },
-    { id: "techniques", name: "เทคนิค", icon: "🔍" },
-    { id: "examples", name: "ตัวอย่าง", icon: "💡" },
-    { id: "tools", name: "เครื่องมือ", icon: "🛠️" }
+  const tabs = [
+    { id: "tips", label: "เทคนิคการตรวจสอบ", icon: Lightbulb },
+    { id: "examples", label: "ตัวอย่างจริง", icon: BookOpen },
+    { id: "resources", label: "แหล่งข้อมูล", icon: Shield }
   ];
 
-  const learningContent = {
-    basics: [
-      {
-        title: "การตรวจสอบข่าว 5 ขั้นตอน",
-        content: "เรียนรู้วิธีการตรวจสอบข่าวอย่างเป็นระบบ",
-        points: [
-          "ตรวจสอบแหล่งที่มา - ดูว่าแหล่งข่าวน่าเชื่อถือหรือไม่",
-          "ดูวันที่เผยแพร่ - ข้อมูลใหม่หรือเก่า",
-          "ตรวจสอบผู้เขียน - มีความเชี่ยวชาญหรือไม่",
-          "เปรียบเทียบกับแหล่งอื่น - มีการรายงานเหมือนกันหรือไม่",
-          "ใช้วิจารณญาณ - ข้อมูลสมเหตุสมผลหรือไม่"
-        ],
-        icon: "📋"
-      },
-      {
-        title: "สัญญาณเตือนข่าวปลอม",
-        content: "จุดสังเกตที่บ่งบอกว่าข่าวอาจเป็นข่าวปลอม",
-        points: [
-          "ใช้คำที่เกินจริง เช่น '100%', 'แน่นอน', 'ไม่มีทางผิด'",
-          "ไม่มีแหล่งอ้างอิงหรือข้อมูลสนับสนุน",
-          "วันที่เผยแพร่ไม่ชัดเจนหรือผิดปกติ",
-          "ใช้รูปภาพที่ตัดต่อหรือไม่เกี่ยวข้อง",
-          "มีข้อผิดพลาดทางไวยากรณ์หรือการสะกดมาก"
-        ],
-        icon: "⚠️"
-      }
-    ],
-    techniques: [
-      {
-        title: "การตรวจสอบโดเมนเว็บไซต์",
-        content: "วิธีการตรวจสอบความน่าเชื่อถือของเว็บไซต์",
-        points: [
-          "ดูนามสกุลโดเมน - .com, .org, .edu มีความน่าเชื่อถือต่างกัน",
-          "ตรวจสอบประวัติเว็บไซต์ - ใช้ Wayback Machine",
-          "ดูข้อมูล WHOIS - ใครเป็นเจ้าของเว็บไซต์",
-          "ตรวจสอบ SSL Certificate - มีการเข้ารหัสหรือไม่",
-          "อ่านหน้า About Us - ข้อมูลองค์กรชัดเจนหรือไม่"
-        ],
-        icon: "🌐"
-      },
-      {
-        title: "การตรวจสอบรูปภาพ",
-        content: "วิธีการตรวจสอบความแท้จริงของรูปภาพ",
-        points: [
-          "ใช้ Google Reverse Image Search",
-          "ตรวจสอบ metadata ของรูปภาพ",
-          "ดูรายละเอียดในรูป - สิ่งที่ไม่สมเหตุสมผล",
-          "เปรียบเทียบกับรูปอื่นในเหตุการณ์เดียวกัน",
-          "ใช้เครื่องมือตรวจจับการตัดต่อ"
-        ],
-        icon: "🖼️"
-      }
-    ],
-    examples: [
-      {
-        title: "ตัวอย่างข่าวปลอมที่พบบ่อย",
-        content: "รูปแบบข่าวปลอมที่มักพบในสังคมออนไลน์",
-        points: [
-          "ข่าวสุขภาพ - อาหารรักษาโรคได้ 100%",
-          "ข่าวการเงิน - วิธีรวยเร็วใน 7 วัน",
-          "ข่าวการเมือง - คำพูดของนักการเมืองที่ถูกบิดเบือน",
-          "ข่าววิทยาศาสตร์ - การค้นพบที่เกินจริง",
-          "ข่าวสังคม - เหตุการณ์ที่เกิดขึ้นในที่อื่น"
-        ],
-        icon: "📰"
-      },
-      {
-        title: "เทคนิคการแยกแยะตัวเลข",
-        content: "วิธีการตรวจสอบข้อมูลตัวเลขและสถิติ",
-        points: [
-          "ดูที่มาของข้อมูล - สำรวจจากหน่วยงานใด",
-          "ตรวจสอบขนาดกลุ่มตัวอย่าง",
-          "ดูช่วงเวลาในการเก็บข้อมูล",
-          "เปรียบเทียบกับข้อมูลจากแหล่งอื่น",
-          "สังเกตการนำเสนอ - กราฟบิดเบือนหรือไม่"
-        ],
-        icon: "📊"
-      }
-    ],
-    tools: [
-      {
-        title: "เครื่องมือตรวจสอบข่าว",
-        content: "เว็บไซต์และเครื่องมือที่ช่วยตรวจสอบข่าว",
-        points: [
-          "Snopes.com - ตรวจสอบข่าวลือและข่าวปลอม",
-          "FactCheck.org - ตรวจสอบข้อความทางการเมือง",
-          "Google Fact Check - ผลการตรวจสอบจากหลายแหล่ง",
-          "TinEye - ค้นหารูปภาพที่ถูกใช้ซ้ำ",
-          "Wayback Machine - ดูประวัติเว็บไซต์"
-        ],
-        icon: "🔧"
-      },
-      {
-        title: "การตั้งค่า Browser",
-        content: "วิธีการตั้งค่าเบราว์เซอร์เพื่อความปลอดภัย",
-        points: [
-          "เปิดใช้งาน popup blocker",
-          "ตั้งค่าให้ตรวจสอบ SSL certificate",
-          "ใช้ extension ตรวจสอบข่าวปลอม",
-          "ปิดการติดตามจาก third-party",
-          "อัพเดทเบราว์เซอร์เป็นประจำ"
-        ],
-        icon: "⚙️"
-      }
-    ]
-  };
+  const tips = [
+    {
+      icon: Search,
+      title: "ตรวจสอบแหล่งข่าว",
+      description: "ดูที่มาของข่าวและความน่าเชื่อถือของเว็บไซต์",
+      details: [
+        "ตรวจสอบชื่อเว็บไซต์และโดเมน",
+        "ดูประวัติของแหล่งข่าว",
+        "เช็คว่าเป็นเว็บไซต์ที่ได้รับการยอมรับหรือไม่"
+      ]
+    },
+    {
+      icon: Link,
+      title: "ตรวจสอบการอ้างอิง",
+      description: "มองหาแหล่งข้อมูลที่อ้างอิงและลิงก์ที่เกี่ยวข้อง",
+      details: [
+        "มีลิงก์ไปยังแหล่งข้อมูลต้นฉบับหรือไม่",
+        "การอ้างอิงมีความน่าเชื่อถือหรือไม่",
+        "ข้อมูลตรงกับแหล่งอื่นหรือไม่"
+      ]
+    },
+    {
+      icon: BarChart3,
+      title: "วิเคราะห์ตัวเลขและสถิติ",
+      description: "ตรวจสอบความสมเหตุสมผลของข้อมูลตัวเลข",
+      details: [
+        "ตัวเลขมีความเป็นไปได้หรือไม่",
+        "มีการเปรียบเทียบกับข้อมูลอื่นหรือไม่",
+        "มีแหล่งที่มาของสถิติหรือไม่"
+      ]
+    },
+    {
+      icon: Users,
+      title: "ตรวจสอบผู้เขียน",
+      description: "ดูประวัติและความเชี่ยวชาญของนักข่าว",
+      details: [
+        "ผู้เขียนมีประสบการณ์ในหัวข้อนี้หรือไม่",
+        "มีประวัติการเขียนข่าวที่น่าเชื่อถือหรือไม่",
+        "มีข้อมูลติดต่อหรือประวัติส่วนตัวหรือไม่"
+      ]
+    }
+  ];
 
-  const currentContent = learningContent[activeCategory] || [];
+  const examples = [
+    {
+      title: "ข่าวปลอม: การแพทย์",
+      content: "นักวิทยาศาสตร์พบยารักษาโรคมะเร็ง 100% จากการทดลองกับผู้ป่วย 50 คน",
+      isFake: true,
+      analysis: [
+        "ตัวเลข 100% ดูเกินจริง",
+        "การทดลองกับผู้ป่วยเพียง 50 คนน้อยเกินไป",
+        "ไม่มีการอ้างอิงงานวิจัยหรือสถาบันที่ชัดเจน"
+      ]
+    },
+    {
+      title: "ข่าวจริง: เทคโนโลยี",
+      content: "Apple ประกาศเปิดตัว iPhone 15 พร้อมฟีเจอร์ใหม่ ตามที่ CEO Tim Cook เปิดเผยในการประชุมผู้ถือหุ้นประจำปี",
+      isFake: false,
+      analysis: [
+        "มีการอ้างอิงบุคคลที่มีชื่อเสียง",
+        "เหตุการณ์เป็นไปได้และสมเหตุสมผล",
+        "มีบริบทเวลาและสถานที่ที่ชัดเจน"
+      ]
+    }
+  ];
 
-  return (
-    <main>
-      <div style={{ maxWidth: "1000px", margin: "2rem auto", padding: "2rem" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <h1 style={{ marginBottom: "0.5rem", color: "var(--gray-800)" }}>
-            📚 เรียนรู้เทคนิคการตรวจสอบข่าว
-          </h1>
-          <p style={{ color: "var(--gray-600)" }}>
-            พัฒนาทักษะการคิดเชิงวิพากษ์และการแยกแยะข่าวจริง-ปลอม
-          </p>
-        </div>
+  const resources = [
+    {
+      title: "FactCheck.org",
+      description: "เว็บไซต์ตรวจสอบข่าวปลอมระดับนานาชาติ",
+      url: "https://factcheck.org",
+      category: "International"
+    },
+    {
+      title: "Thai Fact Check",
+      description: "ศูนย์ตรวจสอบข่าวปลอมภาษาไทย",
+      url: "https://thai-factcheck.com",
+      category: "Thai"
+    },
+    {
+      title: "Snopes",
+      description: "ฐานข้อมูลตรวจสอบข่าวลือและข่าวปลอม",
+      url: "https://snopes.com",
+      category: "International"
+    }
+  ];
 
-        {/* Category Navigation */}
-        <div style={{
-          display: "flex",
-          gap: "0.5rem",
-          marginBottom: "2rem",
-          flexWrap: "wrap",
-          justifyContent: "center"
-        }}>
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              onClick={() => setActiveCategory(category.id)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.5rem",
-                padding: "0.75rem 1.5rem",
-                border: "none",
-                borderRadius: "0.5rem",
-                background: activeCategory === category.id ? "var(--primary-color)" : "var(--gray-100)",
-                color: activeCategory === category.id ? "white" : "var(--gray-700)",
-                cursor: "pointer",
-                fontWeight: "500",
-                transition: "all 0.2s ease"
-              }}
-            >
-              <span>{category.icon}</span>
-              <span>{category.name}</span>
-            </button>
-          ))}
-        </div>
+  const renderTips = () => (
+    <div className="space-y-8">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">5 ขั้นตอนการตรวจสอบข่าว</h2>
+        <p className="text-lg text-gray-600">เรียนรู้เทคนิคที่ช่วยให้คุณแยกแยะข่าวจริง-ปลอมได้อย่างมีประสิทธิภาพ</p>
+      </div>
 
-        {/* Learning Content */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
-          gap: "2rem"
-        }}>
-          {currentContent.map((item, index) => (
-            <div key={index} className="card">
-              <div style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "1rem",
-                marginBottom: "1.5rem"
-              }}>
-                <div style={{ fontSize: "2.5rem" }}>{item.icon}</div>
+      <div className="grid md:grid-cols-2 gap-8">
+        {tips.map((tip, index) => {
+          const IconComponent = tip.icon;
+          return (
+            <div key={index} className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-12 h-12 rounded-xl flex items-center justify-center">
+                  <IconComponent className="h-6 w-6 text-white" />
+                </div>
                 <div>
-                  <h2 style={{ margin: "0 0 0.25rem 0", color: "var(--gray-800)" }}>
-                    {item.title}
-                  </h2>
-                  <p style={{ margin: "0", color: "var(--gray-600)", fontSize: "0.9rem" }}>
-                    {item.content}
-                  </p>
+                  <h3 className="text-xl font-bold text-gray-900">{tip.title}</h3>
+                  <p className="text-gray-600">{tip.description}</p>
                 </div>
               </div>
+              
+              <ul className="space-y-3">
+                {tip.details.map((detail, detailIndex) => (
+                  <li key={detailIndex} className="flex items-start space-x-3">
+                    <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700">{detail}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
 
-              <div style={{
-                background: "var(--gray-50)",
-                padding: "1.5rem",
-                borderRadius: "0.5rem",
-                borderLeft: "4px solid var(--primary-color)"
-              }}>
-                <ul style={{ margin: 0, paddingLeft: "1.5rem" }}>
-                  {item.points.map((point, pointIndex) => (
-                    <li key={pointIndex} style={{
-                      marginBottom: "0.75rem",
-                      color: "var(--gray-700)",
-                      lineHeight: "1.5"
-                    }}>
-                      {point}
+      {/* 5-Step Process */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+        <h3 className="text-2xl font-bold mb-6 text-center">กระบวนการตรวจสอบ 5 ขั้นตอน</h3>
+        <div className="grid md:grid-cols-5 gap-4">
+          {[
+            { step: "1", title: "หยุด", desc: "หยุดอ่านและคิดก่อนแชร์" },
+            { step: "2", title: "ตรวจสอบ", desc: "ดูแหล่งที่มาของข่าว" },
+            { step: "3", title: "เปรียบเทียบ", desc: "หาข่าวจากแหล่งอื่น" },
+            { step: "4", title: "วิเคราะห์", desc: "ดูความสมเหตุสมผล" },
+            { step: "5", title: "ตัดสินใจ", desc: "ตัดสินใจว่าควรแชร์หรือไม่" }
+          ].map((item, index) => (
+            <div key={index} className="text-center">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="font-bold">{item.step}</span>
+              </div>
+              <h4 className="font-semibold mb-2">{item.title}</h4>
+              <p className="text-sm opacity-90">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderExamples = () => (
+    <div className="space-y-8">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">ตัวอย่างจริง</h2>
+        <p className="text-lg text-gray-600">เรียนรู้จากการวิเคราะห์ข่าวจริงและปลอม</p>
+      </div>
+
+      <div className="space-y-8">
+        {examples.map((example, index) => (
+          <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className={`p-6 ${example.isFake ? 'bg-red-50 border-l-4 border-red-500' : 'bg-green-50 border-l-4 border-green-500'}`}>
+              <div className="flex items-center space-x-3 mb-4">
+                {example.isFake ? (
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                ) : (
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                )}
+                <h3 className="text-xl font-bold text-gray-900">{example.title}</h3>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  example.isFake 
+                    ? 'bg-red-100 text-red-800' 
+                    : 'bg-green-100 text-green-800'
+                }`}>
+                  {example.isFake ? 'ข่าวปลอม' : 'ข่าวจริง'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              <div className="bg-gray-50 rounded-xl p-6 mb-6">
+                <p className="text-lg leading-relaxed text-gray-800">"{example.content}"</p>
+              </div>
+              
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">การวิเคราะห์:</h4>
+                <ul className="space-y-3">
+                  {example.analysis.map((point, pointIndex) => (
+                    <li key={pointIndex} className="flex items-start space-x-3">
+                      <ArrowRight className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">{point}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
-          ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderResources = () => (
+    <div className="space-y-8">
+      <div className="text-center mb-12">
+        <h2 className="text-3xl font-bold text-gray-900 mb-4">แหล่งข้อมูลที่น่าเชื่อถือ</h2>
+        <p className="text-lg text-gray-600">เว็บไซต์และเครื่องมือที่ช่วยในการตรวจสอบข่าว</p>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-8">
+        {resources.map((resource, index) => (
+          <div key={index} className="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{resource.title}</h3>
+                <p className="text-gray-600 mb-4">{resource.description}</p>
+              </div>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                resource.category === 'Thai' 
+                  ? 'bg-blue-100 text-blue-800' 
+                  : 'bg-green-100 text-green-800'
+              }`}>
+                {resource.category}
+              </span>
+            </div>
+            
+            <a 
+              href={resource.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-800 font-medium transition-colors"
+            >
+              <span>เยี่ยมชมเว็บไซต์</span>
+              <ArrowRight className="h-4 w-4" />
+            </a>
+          </div>
+        ))}
+      </div>
+
+      {/* Additional Tips */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
+        <h3 className="text-2xl font-bold mb-6">เคล็ดลับเพิ่มเติม</h3>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div>
+            <h4 className="text-lg font-semibold mb-3">เครื่องมือตรวจสอบ</h4>
+            <ul className="space-y-2 text-blue-100">
+              <li>• Google Reverse Image Search</li>
+              <li>• Wayback Machine</li>
+              <li>• WHOIS Lookup</li>
+              <li>• Social Media Verification Tools</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-lg font-semibold mb-3">สัญญาณเตือน</h4>
+            <ul className="space-y-2 text-blue-100">
+              <li>• ตัวเลขที่เกินจริง</li>
+              <li>• ไม่มีแหล่งที่มาชัดเจน</li>
+              <li>• ใช้คำที่ดราม่าเกินไป</li>
+              <li>• ขอให้แชร์ทันที</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium mb-4">
+            <BookOpen className="h-4 w-4" />
+            <span>Learning Center</span>
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">เรียนรู้การตรวจสอบข่าว</h1>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+            พัฒนาทักษะการคิดเชิงวิพากษ์และเรียนรู้เทคนิคการแยกแยะข่าวจริง-ปลอม
+          </p>
         </div>
 
-        {/* Quick Tips */}
-        <div className="card" style={{
-          background: "linear-gradient(135deg, var(--success-color) 0%, #059669 100%)",
-          color: "white",
-          marginTop: "2rem"
-        }}>
-          <h2 style={{ marginBottom: "1rem", textAlign: "center" }}>
-            💡 เคล็ดลับด่วน
-          </h2>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: "1rem"
-          }}>
-            <div style={{
-              background: "rgba(255,255,255,0.2)",
-              padding: "1rem",
-              borderRadius: "0.5rem",
-              textAlign: "center"
-            }}>
-              <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>⏰</div>
-              <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1rem" }}>อย่ารีบร้อน</h3>
-              <p style={{ margin: "0", fontSize: "0.875rem", opacity: 0.9 }}>
-                ใช้เวลาในการตรวจสอบก่อนแชร์
-              </p>
-            </div>
-            <div style={{
-              background: "rgba(255,255,255,0.2)",
-              padding: "1rem",
-              borderRadius: "0.5rem",
-              textAlign: "center"
-            }}>
-              <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🔍</div>
-              <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1rem" }}>ตรวจสอบหลายแหล่ง</h3>
-              <p style={{ margin: "0", fontSize: "0.875rem", opacity: 0.9 }}>
-                เปรียบเทียบข้อมูลจากหลายแหล่ง
-              </p>
-            </div>
-            <div style={{
-              background: "rgba(255,255,255,0.2)",
-              padding: "1rem",
-              borderRadius: "0.5rem",
-              textAlign: "center"
-            }}>
-              <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🧠</div>
-              <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1rem" }}>ใช้วิจารณญาณ</h3>
-              <p style={{ margin: "0", fontSize: "0.875rem", opacity: 0.9 }}>
-                ข้อมูลสมเหตุสมผลหรือไม่
-              </p>
-            </div>
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-2xl shadow-lg p-2 mb-8">
+          <div className="flex">
+            {tabs.map((tab) => {
+              const IconComponent = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 flex items-center justify-center space-x-2 py-3 px-4 rounded-xl font-medium transition-all duration-200 ${
+                    activeTab === tab.id
+                      ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
+                      : "text-gray-700 hover:text-blue-600"
+                  }`}
+                >
+                  <IconComponent className="h-5 w-5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Practice CTA */}
-        <div style={{
-          textAlign: "center",
-          padding: "2rem",
-          background: "var(--gray-100)",
-          borderRadius: "1rem",
-          marginTop: "2rem"
-        }}>
-          <h2 style={{ marginBottom: "1rem", color: "var(--gray-800)" }}>
-            🎯 พร้อมทดสอบความรู้แล้วหรือยัง?
-          </h2>
-          <p style={{ color: "var(--gray-600)", marginBottom: "1.5rem" }}>
-            ลองใช้ความรู้ที่ได้เรียนรู้ในการทดสอบข่าวประจำวัน
-          </p>
-          <button className="btn btn-primary" style={{
-            fontSize: "1.1rem",
-            padding: "1rem 2rem"
-          }}>
-            ⚡ เริ่มทดสอบตอนนี้
-          </button>
+        {/* Tab Content */}
+        <div className="min-h-96">
+          {activeTab === "tips" && renderTips()}
+          {activeTab === "examples" && renderExamples()}
+          {activeTab === "resources" && renderResources()}
         </div>
       </div>
-    </main>
+    </div>
   );
 }
-
-

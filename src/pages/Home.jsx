@@ -1,147 +1,312 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Shield, 
+  Target, 
+  Users, 
+  Calendar,
+  TrendingUp,
+  Award,
+  BookOpen,
+  PlayCircle,
+  Star,
+  CheckCircle,
+  Brain,
+  Zap
+} from 'lucide-react';
 
-export default function Home() {
+const Home = () => {
+  const { currentUser, userRole } = useAuth();
+  const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userStats, setUserStats] = useState({
+    streak: 7,
+    accuracy: 85,
+    totalChallenges: 42,
+    lastBadge: "Truth Seeker"
+  });
+
+  const [globalStats] = useState({
+    totalUsers: 15247,
+    challengesToday: 1873,
+    accuracyRate: 78
+  });
+
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    setIsLoggedIn(!!currentUser);
+  }, [currentUser]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  const timeUntilMidnight = () => {
+    const now = new Date();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    const diff = tomorrow - now;
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const features = [
+    {
+      icon: Brain,
+      title: "AI-Powered Analysis",
+      description: "โมเดล CNN + BiLSTM + Attention ที่ผ่านการเทรนแล้ว"
+    },
+    {
+      icon: Target,
+      title: "Daily Challenge",
+      description: "โจทย์ใหม่ทุกวัน เพื่อสร้างนิสัยคิดวิเคราะห์"
+    },
+    {
+      icon: Award,
+      title: "Gamified Learning",
+      description: "สะสม streak, ปลดล็อก badge และแข่งขันกับเพื่อน"
+    }
+  ];
+
+  const handleStartChallenge = () => {
+    navigate('/challenge');
+  };
+
+  const handleLearnMore = () => {
+    navigate('/learn');
+  };
+
   return (
-    <main>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50">
       {/* Hero Section */}
-      <section style={{
-        background: "linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%)",
-        color: "white",
-        padding: "4rem 2rem",
-        borderRadius: "1rem",
-        textAlign: "center",
-        marginBottom: "3rem",
-        boxShadow: "var(--shadow-xl)"
-      }}>
-        <h1 style={{
-          fontSize: "3rem",
-          fontWeight: "bold",
-          marginBottom: "1rem",
-          textShadow: "0 2px 4px rgba(0,0,0,0.1)"
-        }}>
-          🔍 ฝึกแยกข่าวจริง–ปลอม
-        </h1>
-        <p style={{
-          fontSize: "1.25rem",
-          marginBottom: "2rem",
-          opacity: 0.9,
-          maxWidth: "600px",
-          margin: "0 auto 2rem auto"
-        }}>
-          พัฒนาทักษะการคิดเชิงวิพากษ์ด้วยการทดสอบข่าวประจำวัน 
-          พร้อมคำอธิบายและเทคนิคการตรวจสอบข่าว
-        </p>
-        <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-          <Link to="/challenge" className="btn btn-primary" style={{
-            backgroundColor: "white",
-            color: "var(--primary-color)",
-            fontSize: "1.1rem",
-            padding: "1rem 2rem"
-          }}>
-            ⚡ เริ่มทดสอบวันนี้
-          </Link>
-          <Link to="/learn" className="btn" style={{
-            backgroundColor: "rgba(255,255,255,0.2)",
-            color: "white",
-            border: "2px solid rgba(255,255,255,0.3)",
-            fontSize: "1.1rem",
-            padding: "1rem 2rem"
-          }}>
-            📚 เรียนรู้เทคนิค
-          </Link>
-        </div>
-      </section>
+      <section className="relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">
+                  <Zap className="h-4 w-4" />
+                  <span>AI-Powered News Verification</span>
+                </div>
+                
+                <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+                  ฝึกแยก
+                    ข่าวจริง
+                  <br />ให้เป็นนิสัย
+                </h1>
+                
+                <p className="text-xl text-gray-600 leading-relaxed">
+                  สร้างทักษะการคิดเชิงวิพากษ์ด้วย Daily Challenge ที่ขับเคลื่อนด้วย AI 
+                  พร้อมฟีดแบ็กแบบเรียลไทม์และการเรียนรู้ที่ปรับตัวได้
+                </p>
+              </div>
 
-      {/* Stats Section */}
-      <section style={{ marginBottom: "3rem" }}>
-        <h2 style={{ textAlign: "center", marginBottom: "2rem", color: "var(--gray-800)" }}>
-          สถิติการใช้งาน
-        </h2>
-        <div className="stats-grid">
-          <div className="stat-card">
-            <span className="stat-number">1,234</span>
-            <span className="stat-label">ผู้ใช้ทั้งหมด</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-number">5</span>
-            <span className="stat-label">โจทย์วันนี้</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-number">89%</span>
-            <span className="stat-label">ความแม่นยำเฉลี่ย</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-number">156</span>
-            <span className="stat-label">ข้อทดสอบทั้งหมด</span>
+              {isLoggedIn && (
+                <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">สถานะของคุณ</h3>
+                    <div className="flex items-center space-x-1">
+                      <Star className="h-4 w-4 text-yellow-500" />
+                      <span className="text-sm text-gray-600">{userStats.lastBadge}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{userStats.streak}</div>
+                      <div className="text-sm text-gray-600">วันติดต่อกัน</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">{userStats.accuracy}%</div>
+                      <div className="text-sm text-gray-600">ความแม่นยำ</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">{userStats.totalChallenges}</div>
+                      <div className="text-sm text-gray-600">โจทย์ที่ทำ</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <button 
+                  onClick={handleStartChallenge}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center justify-center space-x-2"
+                >
+                  <PlayCircle className="h-6 w-6" />
+                  <span>เริ่ม Daily Challenge</span>
+                </button>
+                
+                <button 
+                  onClick={handleLearnMore}
+                  className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-xl text-lg font-semibold hover:border-blue-600 hover:text-blue-600 transition-colors flex items-center justify-center space-x-2"
+                >
+                  <BookOpen className="h-6 w-6" />
+                  <span>เรียนรู้เพิ่มเติม</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Stats Card */}
+            <div className="lg:pl-12">
+              <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-gray-200/50 shadow-xl">
+                <div className="text-center mb-8">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Challenge วันนี้</h3>
+                  <div className="inline-flex items-center space-x-2 bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 px-4 py-2 rounded-full">
+                    <Calendar className="h-4 w-4" />
+                    <span className="font-medium">เหลือเวลา {timeUntilMidnight()}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-blue-50 rounded-xl p-4 text-center">
+                      <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-blue-600">{globalStats.totalUsers.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600">ผู้ใช้ทั้งหมด</div>
+                    </div>
+                    
+                    <div className="bg-green-50 rounded-xl p-4 text-center">
+                      <Target className="h-8 w-8 text-green-600 mx-auto mb-2" />
+                      <div className="text-2xl font-bold text-green-600">{globalStats.challengesToday.toLocaleString()}</div>
+                      <div className="text-sm text-gray-600">ทำวันนี้แล้ว</div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-gray-700 font-medium">ความแม่นยำเฉลี่ย</span>
+                      <span className="text-2xl font-bold text-purple-600">{globalStats.accuracyRate}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-3">
+                      <div 
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 h-3 rounded-full transition-all duration-1000"
+                        style={{width: `${globalStats.accuracyRate}%`}}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section>
-        <h2 style={{ textAlign: "center", marginBottom: "2rem", color: "var(--gray-800)" }}>
-          ฟีเจอร์เด่น
-        </h2>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-          gap: "2rem"
-        }}>
-          <div className="card">
-            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🤖</div>
-            <h3 style={{ marginBottom: "1rem", color: "var(--gray-800)" }}>AI วิเคราะห์ข่าว</h3>
-            <p style={{ color: "var(--gray-600)", marginBottom: "1rem" }}>
-              ใช้เทคโนโลยี CNN + BiLSTM + Attention เพื่อวิเคราะห์และให้คะแนนความน่าเชื่อถือของข่าว
+      <section className="py-20 bg-white/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              ทำไมต้องเลือก TruthCheck?
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              ด้วยเทคโนโลยี AI ล้ำสมัยและระบบเกมมิฟิเคชัน เพื่อให้การเรียนรู้เป็นเรื่องสนุก
             </p>
           </div>
-          <div className="card">
-            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>📊</div>
-            <h3 style={{ marginBottom: "1rem", color: "var(--gray-800)" }}>ติดตามความคืบหน้า</h3>
-            <p style={{ color: "var(--gray-600)", marginBottom: "1rem" }}>
-              ดูสถิติการทดสอบ ประวัติความแม่นยำ และพัฒนาการของคุณ
-            </p>
-          </div>
-          <div className="card">
-            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🏆</div>
-            <h3 style={{ marginBottom: "1rem", color: "var(--gray-800)" }}>ระบบรางวัล</h3>
-            <p style={{ color: "var(--gray-600)", marginBottom: "1rem" }}>
-              รับ badge และ streak เมื่อทำได้ดี พร้อมจัดอันดับกับเพื่อน
-            </p>
-          </div>
-          <div className="card">
-            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>💡</div>
-            <h3 style={{ marginBottom: "1rem", color: "var(--gray-800)" }}>คำอธิบายละเอียด</h3>
-            <p style={{ color: "var(--gray-600)", marginBottom: "1rem" }}>
-              เรียนรู้จุดสังเกตและเทคนิคการตรวจสอบข่าวจากแต่ละข้อทดสอบ
-            </p>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {features.map((feature, index) => {
+              const IconComponent = feature.icon;
+              return (
+                <div 
+                  key={index}
+                  className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-gray-100"
+                >
+                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
+                    <IconComponent className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section style={{
-        textAlign: "center",
-        padding: "3rem 2rem",
-        background: "var(--gray-100)",
-        borderRadius: "1rem",
-        marginTop: "3rem"
-      }}>
-        <h2 style={{ marginBottom: "1rem", color: "var(--gray-800)" }}>
-          พร้อมเริ่มต้นแล้วหรือยัง?
-        </h2>
-        <p style={{ color: "var(--gray-600)", marginBottom: "2rem" }}>
-          เข้าร่วมการทดสอบประจำวันและพัฒนาทักษะการคิดเชิงวิพากษ์ของคุณ
-        </p>
-        <Link to="/challenge" className="btn btn-primary" style={{
-          fontSize: "1.2rem",
-          padding: "1rem 2rem"
-        }}>
-          🚀 เริ่มทดสอบตอนนี้
-        </Link>
+      <section className="py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-white">
+            <h2 className="text-4xl font-bold mb-4">
+              เริ่มต้นการเดินทางของคุณวันนี้
+            </h2>
+            <p className="text-xl mb-8 text-blue-100">
+              เพียง 5 นาทีต่อวัน คุณจะพัฒนาทักษะการแยกแยะข่าวจริง-ปลอมได้อย่างเป็นระบบ
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button 
+                onClick={handleStartChallenge}
+                className="bg-white text-blue-600 px-8 py-4 rounded-xl text-lg font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+              >
+                เริ่มฟรีทันที
+              </button>
+              <button 
+                onClick={handleLearnMore}
+                className="border-2 border-white text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
+              >
+                ดูตัวอย่าง
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
-    </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div className="col-span-2">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-xl">
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-xl font-bold">TruthCheck</span>
+              </div>
+              <p className="text-gray-400 mb-4">
+                แพลตฟอร์มฝึกแยกข่าวจริง-ปลอมด้วย AI เพื่อสร้างสังคมที่มีวิจารณญาณ
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">เมนู</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><button onClick={() => navigate('/challenge')} className="hover:text-white transition-colors">Daily Challenge</button></li>
+                <li><button onClick={() => navigate('/learn')} className="hover:text-white transition-colors">เรียนรู้</button></li>
+                <li><button onClick={() => navigate('/leaderboard')} className="hover:text-white transition-colors">อันดับ</button></li>
+                <li><button onClick={() => navigate('/review')} className="hover:text-white transition-colors">ประวัติ</button></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">ติดต่อ</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><a href="#" className="hover:text-white transition-colors">เกี่ยวกับเรา</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">นโยบาย</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">ช่วยเหลือ</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2025 TruthCheck. สงวนลิขสิทธิ์.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
   );
-}
+};
 
-
+export default Home;
