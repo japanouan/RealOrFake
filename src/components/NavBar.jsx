@@ -95,6 +95,9 @@ export default function NavBar() {
                       <div className="text-xs text-gray-600">
                         {currentUser.email}
                       </div>
+                      <div className="text-xs text-gray-500">
+                        Role: {userRole || 'unknown'}
+                      </div>
                       {userRole === 'admin' && (
                         <div className="inline-flex items-center px-2 py-1 mt-1 bg-orange-100 text-orange-800 text-xs rounded-full">
                           ADMIN

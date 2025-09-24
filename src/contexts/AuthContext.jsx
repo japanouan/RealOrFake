@@ -86,23 +86,29 @@ export function AuthProvider({ children }) {
     try {
       // Check if Firestore is available
       if (!isFirestoreAvailable()) {
-        console.log('Firestore not available, using default role');
-        return 'user';
+        console.log('Firestore not available, using email-based role detection');
+        const userEmail = auth.currentUser?.email || '';
+        return userEmail.toLowerCase().includes('admin') ? 'admin' : 'user';
       }
 
       const userDoc = await getDoc(doc(db, 'users', uid));
       if (userDoc.exists()) {
         const userData = userDoc.data();
+        console.log('User role from Firestore:', userData.role);
         return userData.role || 'user';
       }
       
-      // If user document doesn't exist, create it with default role
+      // If user document doesn't exist, create it with appropriate role
       console.log('User document not found, creating default user document...');
+      const userEmail = auth.currentUser?.email || '';
+      const defaultRole = userEmail.toLowerCase().includes('admin') ? 'admin' : 'user';
+      console.log('Creating user document with email:', userEmail, 'role:', defaultRole);
+      
       await setDoc(doc(db, 'users', uid), {
         uid: uid,
-        email: auth.currentUser?.email || '',
+        email: userEmail,
         username: auth.currentUser?.displayName || 'User',
-        role: 'user',
+        role: defaultRole,
         createdAt: new Date(),
         stats: {
           totalQuestions: 0,
@@ -113,7 +119,7 @@ export function AuthProvider({ children }) {
         }
       });
       
-      return 'user'; // Default role
+      return defaultRole; // Return the appropriate role
     } catch (error) {
       console.error('Error getting user role:', error);
       return 'user';

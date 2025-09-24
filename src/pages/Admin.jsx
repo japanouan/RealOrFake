@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { resetUserRole } from "../utils/resetUserRole";
 import { 
   Settings, 
   Users, 
@@ -353,8 +354,15 @@ export default function Admin() {
           <div>
             <h1 className="text-4xl font-bold text-gray-900">Admin Panel</h1>
             <p className="text-lg text-gray-600">ยินดีต้อนรับ {currentUser?.displayName || 'Admin'}</p>
+            <p className="text-sm text-gray-500">Email: {currentUser?.email}</p>
           </div>
           <div className="flex items-center space-x-3">
+            <button 
+              onClick={resetUserRole}
+              className="bg-red-500 text-white px-4 py-2 rounded-xl font-medium hover:bg-red-600 transition-colors"
+            >
+              Reset Role
+            </button>
             <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-xl font-medium">
               ADMIN
             </div>
