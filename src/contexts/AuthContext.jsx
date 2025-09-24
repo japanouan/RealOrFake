@@ -189,6 +189,7 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     userRole,
+    loading,
     register,
     login,
     logout,

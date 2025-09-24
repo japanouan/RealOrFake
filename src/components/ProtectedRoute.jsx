@@ -3,8 +3,13 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function ProtectedRoute({ children, requireAdmin = false }) {
-  const { currentUser, userRole } = useAuth();
+  const { currentUser, userRole, loading } = useAuth();
   const location = useLocation();
+
+  // Wait for auth to resolve to avoid flicker before redirecting
+  if (loading) {
+    return null;
+  }
 
   // If not logged in, redirect to auth page
   if (!currentUser) {

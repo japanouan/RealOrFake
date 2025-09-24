@@ -40,8 +40,17 @@ export default function NavBar() {
     navItems.push({ path: "/admin", label: "จัดการ", icon: "⚙️" });
   }
 
+  const handleProtectedClick = (e, path) => {
+    // If user is not logged in, route straight to /auth without changing path first
+    if (!currentUser && path !== '/auth') {
+      e.preventDefault();
+      setMobileOpen(false);
+      navigate('/auth');
+    }
+  };
+
   return (
-    <nav className={`${isScrolled ? 'bg-white/90 shadow-md border-gray-200' : 'bg-white/70 shadow-sm border-transparent'} backdrop-blur-md border-b sticky top-0 z-50 transition-all duration-300`}>
+    <nav className={`${isScrolled ? 'bg-white shadow-md border-gray-200' : 'bg-white shadow-sm border-transparent'} border-b sticky top-0 z-50`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           {/* Logo */}
@@ -61,6 +70,7 @@ export default function NavBar() {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={(e) => handleProtectedClick(e, item.path)}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
                   location.pathname === item.path
                     ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg"
@@ -150,7 +160,7 @@ export default function NavBar() {
               <Link
                 key={item.path}
                 to={item.path}
-                onClick={() => setMobileOpen(false)}
+                onClick={(e) => { handleProtectedClick(e, item.path); if (currentUser || item.path === '/auth') setMobileOpen(false); }}
                 className={`flex items-center space-x-2 p-3 rounded-xl text-sm font-medium transition-all ${
                   location.pathname === item.path
                     ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white"
