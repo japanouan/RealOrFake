@@ -27,7 +27,7 @@ export default function NavBar() {
     }
   };
 
-  const navItems = [
+  const baseNavItems = [
     { path: "/", label: "หน้าแรก", icon: "🏠" },
     { path: "/challenge", label: "ทดสอบ", icon: "⚡" },
     { path: "/review", label: "ประวัติ", icon: "📊" },
@@ -35,10 +35,13 @@ export default function NavBar() {
     { path: "/learn", label: "เรียนรู้", icon: "📚" }
   ];
 
-  // Add admin link if user is admin
-  if (userRole === 'admin') {
-    navItems.push({ path: "/admin", label: "จัดการ", icon: "⚙️" });
-  }
+  // Show nav items only after login; append admin when role is admin
+  const navItems = currentUser
+    ? [
+        ...baseNavItems,
+        ...(userRole === 'admin' ? [{ path: "/admin", label: "จัดการ", icon: "⚙️" }] : [])
+      ]
+    : [];
 
   const handleProtectedClick = (e, path) => {
     // If user is not logged in, route straight to /auth without changing path first

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export default function Layout({ children }) {
   return (
-    <div className="min-h-screen relative overflow-x-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
       {/* Decorative background */}
       <div className="pointer-events-none absolute inset-0 -z-10">
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-gradient-to-br from-blue-200/60 via-purple-200/50 to-pink-200/40 rounded-full blur-3xl"></div>
@@ -11,11 +11,11 @@ export default function Layout({ children }) {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.08),transparent_40%),radial-gradient(circle_at_bottom_left,rgba(168,85,247,0.08),transparent_40%)]"></div>
       </div>
 
-      <main className="pb-24">
+      <main className="flex-1">
         {children}
       </main>
 
-      <footer className="bg-gray-900 text-white py-12 will-change-auto">
+      <footer className="bg-gray-900 text-white py-12 will-change-auto border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="col-span-2">
