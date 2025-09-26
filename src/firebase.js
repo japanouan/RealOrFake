@@ -11,7 +11,7 @@ import { getFirestore } from "firebase/firestore";
 const firebaseConfig = {
   apiKey: "AIzaSyA_VycM7zniO7ti64Bb-Yn1rfw5SUyDmg8",
   authDomain: "pattern-3d1a8.firebaseapp.com",
-  databaseURL: "https://pattern-3d1a8-default-rtdb.firebaseio.com", // 👈 เพิ่มบรรทัดนี้
+  databaseURL: "https://pattern-3d1a8-default-rtdb.asia-southeast1.firebasedatabase.app/", // 👈 เพิ่มบรรทัดนี้
   projectId: "pattern-3d1a8",
   storageBucket: "pattern-3d1a8.appspot.com", // 👈 ตรงนี้แก้จาก .app เป็น .appspot.com
   messagingSenderId: "51744145096",
