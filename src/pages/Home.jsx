@@ -1,36 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { ref, onValue } from 'firebase/database';
+import { db } from '../firebase';
+
 import { 
-  Shield, 
-  Target, 
-  Users, 
-  Calendar,
-  TrendingUp,
-  Award,
-  BookOpen,
-  PlayCircle,
-  Star,
-  CheckCircle,
-  Brain,
-  Zap
+  Shield, Target, Users, Calendar, TrendingUp,
+  Award, BookOpen, PlayCircle, Star, CheckCircle,
+  Brain, Zap
 } from 'lucide-react';
 
 const Home = () => {
-  const { currentUser, userRole } = useAuth();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
+
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userStats, setUserStats] = useState({
-    streak: 7,
-    accuracy: 85,
-    totalChallenges: 42,
-    lastBadge: "Truth Seeker"
+    streak: 0,
+    accuracy: 0,
+    totalChallenges: 0,
+    lastBadge: "-"
   });
 
-  const [globalStats] = useState({
-    totalUsers: 15247,
-    challengesToday: 1873,
-    accuracyRate: 78
+  // ----- Global stats ที่จะดึงจาก DB -----
+  const [globalStats, setGlobalStats] = useState({
+    totalUsers: 0,
+    challengesToday: 0,
+    accuracyRate: 0
   });
 
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -39,11 +35,61 @@ const Home = () => {
     setIsLoggedIn(!!currentUser);
   }, [currentUser]);
 
+  // ----- ดึงข้อมูล global จาก Firebase -----
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    // จำนวนผู้ใช้
+    const usersRef = ref(db, 'users');
+    onValue(usersRef, snapshot => {
+      if (snapshot.exists()) {
+        setGlobalStats(prev => ({
+          ...prev,
+          totalUsers: Object.keys(snapshot.val() || {}).length
+        }));
+      }
+    });
 
+    // จำนวนโจทย์วันนี้ (สมมติ dailyChallenges/yyyy-mm-dd/…)
+    const today = new Date().toISOString().split('T')[0]; // yyyy-mm-dd
+    const challengesRef = ref(db, `dailyChallenges/${today}`);
+    onValue(challengesRef, snapshot => {
+      if (snapshot.exists()) {
+        setGlobalStats(prev => ({
+          ...prev,
+          challengesToday: Object.keys(snapshot.val() || {}).length
+        }));
+      }
+    });
+
+    // ความแม่นยำเฉลี่ยของระบบ (สมมติบันทึกไว้ที่ userAggregates/accuracyRate)
+    const accRef = ref(db, 'userAggregates/accuracyRate');
+    onValue(accRef, snapshot => {
+      if (snapshot.exists()) {
+        setGlobalStats(prev => ({
+          ...prev,
+          accuracyRate: snapshot.val()
+        }));
+      }
+    });
+
+    // ----- ถ้า login แล้วดึงสถิติของ user -----
+    if (currentUser) {
+      const userStatRef = ref(db, `userAggregates/${currentUser.uid}`);
+      onValue(userStatRef, snapshot => {
+        if (snapshot.exists()) {
+          const d = snapshot.val();
+          setUserStats({
+            streak: d.streak || 0,
+            accuracy: d.accuracy || 0,
+            totalChallenges: d.totalChallenges || 0,
+            lastBadge: d.lastBadge || "-"
+          });
+        }
+      });
+    }
+  }, [currentUser]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -52,66 +98,52 @@ const Home = () => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
-    
     const diff = tomorrow - now;
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2,'0')}:${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
   };
 
   const features = [
-    {
-      icon: Brain,
-      title: "AI-Powered Analysis",
-      description: "โมเดล CNN + BiLSTM + Attention ที่ผ่านการเทรนแล้ว"
-    },
-    {
-      icon: Target,
-      title: "Daily Challenge",
-      description: "โจทย์ใหม่ทุกวัน เพื่อสร้างนิสัยคิดวิเคราะห์"
-    },
-    {
-      icon: Award,
-      title: "Gamified Learning",
-      description: "สะสม streak, ปลดล็อก badge และแข่งขันกับเพื่อน"
-    }
+    { icon: Brain, title: "AI-Powered Analysis",
+      description: "โมเดล CNN + BiLSTM + Attention ที่ผ่านการเทรนแล้ว" },
+    { icon: Target, title: "Daily Challenge",
+      description: "โจทย์ใหม่ทุกวัน เพื่อสร้างนิสัยคิดวิเคราะห์" },
+    { icon: Award, title: "Gamified Learning",
+      description: "สะสม streak, ปลดล็อก badge และแข่งขันกับเพื่อน" }
   ];
 
-  const handleStartChallenge = () => {
-    navigate('/challenge');
-  };
-
-  const handleLearnMore = () => {
-    navigate('/learn');
-  };
+  const handleStartChallenge = () => navigate('/challenge');
+  const handleLearnMore = () => navigate('/learn');
 
   return (
     <div className="py-8 animate-fade-in">
-      {/* Hero Section */}
+      {/* ---------- Hero Section ---------- */}
       <section className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
+
+            {/* left : intro */}
             <div className="space-y-8">
               <div className="space-y-4">
                 <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">
                   <Zap className="h-4 w-4" />
                   <span>AI-Powered News Verification</span>
                 </div>
-                
+
                 <h1 className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                  ฝึกแยก
-                    ข่าวจริง
-                  <br />ให้เป็นนิสัย
+                  ฝึกแยกข่าวจริง–ปลอม
+                  <br/>ให้เป็นนิสัย
                 </h1>
-                
+
                 <p className="text-xl text-gray-600 leading-relaxed">
                   สร้างทักษะการคิดเชิงวิพากษ์ด้วย Daily Challenge ที่ขับเคลื่อนด้วย AI 
-                  พร้อมฟีดแบ็กแบบเรียลไทม์และการเรียนรู้ที่ปรับตัวได้
+                  พร้อมฟีดแบ็กเรียลไทม์และระบบเรียนรู้ที่ปรับตัวได้
                 </p>
               </div>
 
+              {/* user stats (เฉพาะถ้า login) */}
               {isLoggedIn && (
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-gray-200/50">
                   <div className="flex items-center justify-between mb-4">
@@ -121,7 +153,6 @@ const Home = () => {
                       <span className="text-sm text-gray-600">{userStats.lastBadge}</span>
                     </div>
                   </div>
-                  
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-blue-600">{userStats.streak}</div>
@@ -147,7 +178,6 @@ const Home = () => {
                   <PlayCircle className="h-6 w-6" />
                   <span>เริ่ม Daily Challenge</span>
                 </button>
-                
                 <button 
                   onClick={handleLearnMore}
                   className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-xl text-lg font-semibold hover:border-blue-600 hover:text-blue-600 transition-colors flex items-center justify-center space-x-2"
@@ -158,7 +188,7 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Stats Card */}
+            {/* right : global stats */}
             <div className="lg:pl-12">
               <div className="bg-white/80 backdrop-blur-md rounded-3xl p-8 border border-gray-200/50 shadow-xl">
                 <div className="text-center mb-8">
@@ -173,21 +203,27 @@ const Home = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="bg-blue-50 rounded-xl p-4 text-center">
                       <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-blue-600">{globalStats.totalUsers.toLocaleString()}</div>
+                      <div className="text-2xl font-bold text-blue-600">
+                        {globalStats.totalUsers.toLocaleString()}
+                      </div>
                       <div className="text-sm text-gray-600">ผู้ใช้ทั้งหมด</div>
                     </div>
-                    
+
                     <div className="bg-green-50 rounded-xl p-4 text-center">
                       <Target className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                      <div className="text-2xl font-bold text-green-600">{globalStats.challengesToday.toLocaleString()}</div>
-                      <div className="text-sm text-gray-600">ทำวันนี้แล้ว</div>
+                      <div className="text-2xl font-bold text-green-600">
+                        {globalStats.challengesToday.toLocaleString()}
+                      </div>
+                      <div className="text-sm text-gray-600">โจทย์วันนี้</div>
                     </div>
                   </div>
 
                   <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-gray-700 font-medium">ความแม่นยำเฉลี่ย</span>
-                      <span className="text-2xl font-bold text-purple-600">{globalStats.accuracyRate}%</span>
+                      <span className="text-2xl font-bold text-purple-600">
+                        {globalStats.accuracyRate}%
+                      </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3">
                       <div 
@@ -199,28 +235,26 @@ const Home = () => {
                 </div>
               </div>
             </div>
+
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* ---------- Features Section ---------- */}
       <section className="py-20 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
-              ทำไมต้องเลือก TruthCheck?
-            </h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">ทำไมต้องเลือก TruthCheck?</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              ด้วยเทคโนโลยี AI ล้ำสมัยและระบบเกมมิฟิเคชัน เพื่อให้การเรียนรู้เป็นเรื่องสนุก
+              ด้วยเทคโนโลยี AI ล้ำสมัยและระบบเกมมิฟิเคชัน ให้การเรียนรู้เรื่องข่าวจริง–ปลอมเป็นเรื่องสนุก
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feature, index) => {
+            {features.map((feature, i) => {
               const IconComponent = feature.icon;
               return (
-                <div 
-                  key={index}
+                <div key={i}
                   className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 border border-gray-100"
                 >
                   <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-16 h-16 rounded-xl flex items-center justify-center mb-6">
@@ -235,17 +269,15 @@ const Home = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* ---------- CTA Section ---------- */}
       <section className="py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-white">
-            <h2 className="text-4xl font-bold mb-4">
-              เริ่มต้นการเดินทางของคุณวันนี้
-            </h2>
+            <h2 className="text-4xl font-bold mb-4">เริ่มต้นการเดินทางของคุณวันนี้</h2>
             <p className="text-xl mb-8 text-blue-100">
-              เพียง 5 นาทีต่อวัน คุณจะพัฒนาทักษะการแยกแยะข่าวจริง-ปลอมได้อย่างเป็นระบบ
+              เพียง 5 นาทีต่อวัน คุณจะพัฒนาทักษะการแยกแยะข่าวจริง–ปลอมได้อย่างเป็นระบบ
             </p>
-            
+
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button 
                 onClick={handleStartChallenge}
@@ -263,8 +295,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* Footer moved to Layout */}
     </div>
   );
 };
