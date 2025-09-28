@@ -300,7 +300,7 @@ export default function Auth() {
           </div>
 
           {/* Admin Note */}
-          {currentTab === "register" && (
+          {/* {currentTab === "register" && (
             <div className="mt-6 bg-orange-50 border border-orange-200 rounded-xl p-4">
               <div className="flex items-center">
                 <CheckCircle className="h-5 w-5 text-orange-600 mr-2" />
@@ -310,7 +310,7 @@ export default function Auth() {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </div>
