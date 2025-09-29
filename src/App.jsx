@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import "./App.css";
 import { app, analytics } from "./firebase";
 import { AuthProvider } from "./contexts/AuthContext";
@@ -25,7 +25,7 @@ function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <NavBar />
+        {location.pathname !== "/auth" && <NavBar />}
         <Layout>
         <Routes>
           <Route path="/auth" element={<Auth />} />
