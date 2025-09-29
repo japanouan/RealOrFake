@@ -27,6 +27,13 @@ export default function NavBar() {
     }
   };
 
+  // สำหรับ role admin ให้แสดงเฉพาะ หน้าแรก, อันดับ, จัดการ
+  const adminNavItems = [
+    { path: "/", label: "หน้าแรก", icon: "🏠" },
+    { path: "/leaderboard", label: "อันดับ", icon: "🏆" },
+    { path: "/admin", label: "จัดการ", icon: "⚙️" }
+  ];
+
   const baseNavItems = [
     { path: "/", label: "หน้าแรก", icon: "🏠" },
     { path: "/challenge", label: "ทดสอบ", icon: "⚡" },
@@ -35,12 +42,9 @@ export default function NavBar() {
     { path: "/learn", label: "เรียนรู้", icon: "📚" }
   ];
 
-  // Show nav items only after login; append admin when role is admin
+  // แสดงเมนูหลังเข้าสู่ระบบเท่านั้น
   const navItems = currentUser
-    ? [
-        ...baseNavItems,
-        ...(userRole === 'admin' ? [{ path: "/admin", label: "จัดการ", icon: "⚙️" }] : [])
-      ]
+    ? (userRole === 'admin' ? adminNavItems : baseNavItems)
     : [];
 
   const handleProtectedClick = (e, path) => {

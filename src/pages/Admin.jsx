@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { resetUserRole } from "../utils/resetUserRole";
+import { db } from "../firebase";
+import { onValue, ref } from "firebase/database";
 import { 
   Settings, 
   Users, 
@@ -20,6 +22,8 @@ import {
 export default function Admin() {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
 
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
@@ -29,28 +33,57 @@ export default function Admin() {
     { id: "settings", label: "ตั้งค่า", icon: Settings }
   ];
 
-  // Mock data
-  const dashboardStats = {
-    totalUsers: 15247,
-    activeUsers: 8934,
-    challengesCompleted: 45678,
-    accuracyRate: 78.5,
-    newUsersToday: 234,
-    challengesToday: 1873
+  // Subscribe to realtime users
+  useEffect(() => {
+    const usersRef = ref(db, "users");
+    const unsubscribe = onValue(usersRef, (snapshot) => {
+      const value = snapshot.val() || {};
+      // Expect either map keyed by uid or array
+      const list = Array.isArray(value)
+        ? value.filter(Boolean)
+        : Object.keys(value).map((key) => ({ id: key, uid: key, ...value[key] }));
+      setUsers(list.sort((a, b) => {
+        const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return bTime - aTime;
+      }));
+      setLoadingUsers(false);
+    }, () => setLoadingUsers(false));
+    return () => unsubscribe();
+  }, []);
+
+  // Compute dashboard stats from realtime users
+  const dashboardStats = useMemo(() => {
+    const totalUsers = users.length;
+    const activeUsers = users.filter(u => u.status === "active" || u.active === true).length;
+    // Placeholder fields derived from user stats if exist
+    const challengesCompleted = users.reduce((sum, u) => sum + (u.stats?.totalQuestions || 0), 0);
+    const correct = users.reduce((sum, u) => sum + (u.stats?.correctAnswers || 0), 0);
+    const accuracyRate = challengesCompleted > 0 ? (correct / challengesCompleted) * 100 : 0;
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const newUsersToday = users.filter(u => {
+      if (!u.createdAt) return false;
+      const t = new Date(u.createdAt);
+      return t >= today;
+    }).length;
+    const challengesToday = users.reduce((sum, u) => sum + (u.stats?.todayQuestions || 0), 0);
+    return { totalUsers, activeUsers, challengesCompleted, accuracyRate, newUsersToday, challengesToday };
+  }, [users]);
+
+  // Safe placeholder for content list to prevent runtime errors
+  const challenges = useMemo(() => [], []);
+
+  const formatDate = (value) => {
+    if (!value) return "-";
+    try {
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleDateString();
+    } catch {
+      return String(value);
+    }
   };
-
-  const recentUsers = [
-    { id: 1, name: "TruthSeeker", email: "truth@example.com", joinDate: "2025-01-21", status: "active", role: "user" },
-    { id: 2, name: "FactChecker", email: "fact@example.com", joinDate: "2025-01-20", status: "active", role: "user" },
-    { id: 3, name: "NewsGuard", email: "news@example.com", joinDate: "2025-01-19", status: "inactive", role: "user" },
-    { id: 4, name: "VerifyMaster", email: "verify@example.com", joinDate: "2025-01-18", status: "active", role: "user" }
-  ];
-
-  const challenges = [
-    { id: 1, title: "ข่าวการเมือง", domain: "politics", difficulty: "medium", status: "active", createdDate: "2025-01-21" },
-    { id: 2, title: "ข่าวสุขภาพ", domain: "health", difficulty: "easy", status: "active", createdDate: "2025-01-20" },
-    { id: 3, title: "ข่าวเทคโนโลยี", domain: "technology", difficulty: "hard", status: "draft", createdDate: "2025-01-19" }
-  ];
 
   const renderDashboard = () => (
     <div className="space-y-8">
@@ -118,24 +151,23 @@ export default function Admin() {
       <div className="bg-white rounded-2xl shadow-lg p-8">
         <h3 className="text-xl font-bold text-gray-900 mb-6">กิจกรรมล่าสุด</h3>
         <div className="space-y-4">
-          {[
-            { action: "ผู้ใช้ใหม่", user: "TruthSeeker", time: "5 นาทีที่แล้ว", type: "success" },
-            { action: "ทำข้อสอบเสร็จ", user: "FactChecker", time: "10 นาทีที่แล้ว", type: "info" },
-            { action: "รายงานปัญหา", user: "NewsGuard", time: "15 นาทีที่แล้ว", type: "warning" },
-            { action: "ผู้ใช้ใหม่", user: "VerifyMaster", time: "20 นาทีที่แล้ว", type: "success" }
-          ].map((activity, index) => (
-            <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
-              <div className={`w-3 h-3 rounded-full ${
-                activity.type === 'success' ? 'bg-green-500' :
-                activity.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
-              }`}></div>
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">{activity.action}</p>
-                <p className="text-sm text-gray-600">โดย {activity.user}</p>
+          {users.slice(0, 4).map((u, index) => {
+            const created = u.createdAt ? new Date(u.createdAt) : null;
+            const time = created ? created.toLocaleString() : "-";
+            return (
+              <div key={u.id || index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-xl">
+                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">ผู้ใช้ใหม่</p>
+                  <p className="text-sm text-gray-600">โดย {u.username || u.name || u.email || u.uid}</p>
+                </div>
+                <span className="text-sm text-gray-500">{time}</span>
               </div>
-              <span className="text-sm text-gray-500">{activity.time}</span>
-            </div>
-          ))}
+            );
+          })}
+          {users.length === 0 && (
+            <div className="text-sm text-gray-500">ไม่พบข้อมูลผู้ใช้</div>
+          )}
         </div>
       </div>
     </div>
@@ -168,25 +200,25 @@ export default function Admin() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {recentUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
+              {(loadingUsers ? [] : users).map((user, idx) => (
+                <tr key={user.id || user.uid || idx} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
-                        {user.name.charAt(0)}
+                        {(user.username || user.name || user.email || "U").toString().charAt(0)}
                       </div>
-                      <span className="font-medium text-gray-900">{user.name}</span>
+                      <span className="font-medium text-gray-900">{user.username || user.name || user.email || user.uid}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600">{user.email}</td>
-                  <td className="px-6 py-4 text-gray-600">{user.joinDate}</td>
+                  <td className="px-6 py-4 text-gray-600">{user.email || '-'}</td>
+                  <td className="px-6 py-4 text-gray-600">{formatDate(user.createdAt)}</td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      user.status === 'active' 
+                      user.status === 'active' || user.active === true
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {user.status === 'active' ? 'ใช้งาน' : 'ไม่ใช้งาน'}
+                      {user.status === 'active' || user.active === true ? 'ใช้งาน' : 'ไม่ใช้งาน'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -213,6 +245,11 @@ export default function Admin() {
                   </td>
                 </tr>
               ))}
+              {!loadingUsers && users.length === 0 && (
+                <tr>
+                  <td colSpan="6" className="px-6 py-6 text-center text-gray-500">ไม่พบผู้ใช้</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
