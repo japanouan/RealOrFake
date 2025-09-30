@@ -1,0 +1,102 @@
+{
+  "users": {
+    "demoUser1": {
+      "displayName": "Ada Lovelace",
+      "photoURL": "",
+      "createdAt": 1758735355563,
+      "streak": 7,
+      "longestStreak": 12,
+      "lastPlayedAt": null,
+      "settings": { "lang": "th", "notifyDaily": true, "privacyShare": false },
+      "stats": { "attempts": 0, "correct": 0, "f1": 0, "avgTimeSec": 0 },
+      "role": "user"
+    },
+    "admin888": {
+      "displayName": "admin",
+      "email": "admin888@gmail.com",
+      "photoURL": "",
+      "createdAt": 1758735355563,
+      "streak": 0,
+      "longestStreak": 0,
+      "lastPlayedAt": null,
+      "settings": { "lang": "th", "notifyDaily": true, "privacyShare": false },
+      "stats": { "attempts": 0, "correct": 0, "f1": 0, "avgTimeSec": 0 },
+      "role": "admin"
+    }
+  },
+  "items": {
+    "item001": {
+      "title": "Claim A",
+      "text": "...",
+      "source": "LIAR",
+      "domain": "snopes.com",
+      "publishedAt": null,
+      "difficulty": "easy",
+      "topic": ["health"],
+      "createdAt": 1758735355563
+    },
+    "item002": {
+      "title": "Claim B",
+      "text": "...",
+      "source": "MultiFC",
+      "domain": "snopes.com",
+      "publishedAt": null,
+      "difficulty": "med",
+      "topic": ["politics"],
+      "createdAt": 1758735355563
+    }
+  },
+  "dailyChallenges": {
+    "2025-09-30": {
+      "dateKey": "2025-09-30",
+      "count": 2,
+      "topics": ["health", "politics"],
+      "createdAt": 1759160000000,
+      "items": {
+        "item001": { "itemRef": "items/item001", "order": 1 },
+        "item002": { "itemRef": "items/item002", "order": 2 }
+      }
+    }
+  },
+  "assignments": {
+    "demoUser1": {
+      "days": {
+        "2025-09-30": {
+          "dateKey": "2025-09-30",
+          "createdAt": 1759160000000,
+          "done": false,
+          "items": {
+            "item001": { "itemRef": "items/item001", "order": 1, "servedAt": 1759160000000 }
+          }
+        }
+      }
+    }
+  },
+  "submissions": {
+    "demoUser1": {
+      "sub1": {
+        "dateKey": "2025-09-30",
+        "itemRef": "items/item001",
+        "userLabel": 1,
+        "userReason": "ตัวอย่าง",
+        "durationSec": 10,
+        "createdAt": 1759160000000
+      }
+    }
+  },
+  "userAggregates": {
+    "demoUser1": {
+      "all": { "attempts": 1, "correct": 1, "f1": 1 },
+      "daily": { "2025-09-30": { "attempts": 1, "correct": 1, "f1": 1 } },
+      "weekly": {},
+      "updatedAt": 1759160000000
+    }
+  },
+  "leaderboards": {
+    "daily-2025-09-30": {
+      "top": [ { "uid": "demoUser1", "score": 1, "f1": 1, "streak": 7 } ],
+      "updatedAt": 1759160000000
+    }
+  }
+}
+

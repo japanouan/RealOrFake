@@ -6,9 +6,10 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { auth, fs } from '../firebase';
+import { getDatabase, ref, set, get, update, child } from 'firebase/database';
+import { auth } from '../firebase';
 
+const db = getDatabase();
 const AuthContext = createContext();
 
 export function useAuth() {
@@ -20,47 +21,39 @@ export function AuthProvider({ children }) {
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check if Firestore is available
-  const isFirestoreAvailable = () => {
-    try {
-      return db && typeof db === 'object';
-    } catch (error) {
-      console.error('Firestore not available:', error);
-      return false;
-    }
-  };
-
   // Register new user
   async function register(email, password, username, role = 'user') {
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update profile with display name
-      await updateProfile(userCredential.user, {
-        displayName: username
-      });
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-      // Create user document in Firestore with role
-      await setDoc(doc(fs, 'users', userCredential.user.uid), {
-        uid: userCredential.user.uid,
-        email: email,
-        username: username,
-        role: role,
-        createdAt: new Date(),
-        stats: {
-          totalQuestions: 0,
-          correctAnswers: 0,
-          accuracy: 0,
-          streak: 0,
-          badges: []
-        }
-      });
+    // อัปเดต displayName ใน Firebase Auth
+    await updateProfile(userCredential.user, { displayName: username });
 
-      return userCredential;
-    } catch (error) {
-      throw error;
-    }
+    // ดึงค่าที่อัปเดตแล้วมาใช้
+    const finalDisplayName = userCredential.user.displayName || username;
+
+    // สร้าง user document ใน Realtime Database
+    await set(ref(db, 'users/' + userCredential.user.uid), {
+      uid: userCredential.user.uid,
+      email: email,
+      displayName: finalDisplayName,   // 👈 ใช้ displayName ตาม rules
+      role: role,
+      createdAt: Date.now(),
+      stats: {
+        totalQuestions: 0,
+        correctAnswers: 0,
+        accuracy: 0,
+        streak: 0,
+        badges: []
+      }
+    });
+
+    return userCredential;
+  } catch (error) {
+    throw error;
   }
+}
+
 
   // Login user
   async function login(email, password) {
@@ -81,41 +74,31 @@ export function AuthProvider({ children }) {
     }
   }
 
-  // Get user role from Firestore
+  // Get user role from Realtime Database
   async function getUserRole(uid) {
     try {
-      // Check if Firestore is available
-      if (!isFirestoreAvailable()) {
-        console.log('Firestore not available, using email-based role detection');
-        const userEmail = auth.currentUser?.email || '';
-        return userEmail.toLowerCase().includes('admin') ? 'admin' : 'user';
-      }
-
-      const userRef = doc(fs, 'users', uid);
-      const userDoc = await getDoc(userRef);
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
+      const snapshot = await get(child(ref(db), 'users/' + uid));
+      if (snapshot.exists()) {
+        const userData = snapshot.val();
         const email = auth.currentUser?.email?.toLowerCase() || '';
-        // Auto-elevate admin account if needed
+
+        // Auto-elevate admin account
         if (email === 'admin888@gmail.com' && userData.role !== 'admin') {
-          await setDoc(userRef, { role: 'admin' }, { merge: true });
+          await update(ref(db, 'users/' + uid), { role: 'admin' });
           return 'admin';
         }
         return userData.role || 'user';
       }
-      
-      // If user document doesn't exist, create it with appropriate role
-      console.log('User document not found, creating default user document...');
+
+      // If user not exist → create with default role
       const userEmail = auth.currentUser?.email || '';
       const defaultRole = userEmail.toLowerCase().includes('admin') ? 'admin' : 'user';
-      console.log('Creating user document with email:', userEmail, 'role:', defaultRole);
-      
-      await setDoc(userRef, {
-        uid: uid,
+      await set(ref(db, 'users/' + uid), {
+        uid,
         email: userEmail,
         username: auth.currentUser?.displayName || 'User',
         role: defaultRole,
-        createdAt: new Date(),
+        createdAt: Date.now(),
         stats: {
           totalQuestions: 0,
           correctAnswers: 0,
@@ -124,8 +107,7 @@ export function AuthProvider({ children }) {
           badges: []
         }
       });
-      
-      return defaultRole; // Return the appropriate role
+      return defaultRole;
     } catch (error) {
       console.error('Error getting user role:', error);
       return 'user';
@@ -135,9 +117,7 @@ export function AuthProvider({ children }) {
   // Update user stats
   async function updateUserStats(uid, stats) {
     try {
-      await setDoc(doc(fs, 'users', uid), {
-        stats: stats
-      }, { merge: true });
+      await update(ref(db, 'users/' + uid + '/stats'), stats);
     } catch (error) {
       console.error('Error updating user stats:', error);
     }
@@ -148,7 +128,6 @@ export function AuthProvider({ children }) {
       try {
         if (user) {
           setCurrentUser(user);
-          // Get user role from Firestore with timeout
           try {
             const role = await Promise.race([
               getUserRole(user.uid),
@@ -159,7 +138,7 @@ export function AuthProvider({ children }) {
             setUserRole(role);
           } catch (error) {
             console.error('Error getting user role:', error);
-            setUserRole('user'); // Default role on error
+            setUserRole('user');
           }
         } else {
           setCurrentUser(null);
@@ -174,7 +153,6 @@ export function AuthProvider({ children }) {
       }
     });
 
-    // Fallback timeout to prevent infinite loading
     const timeoutId = setTimeout(() => {
       console.log('Auth loading timeout - setting loading to false');
       setLoading(false);
