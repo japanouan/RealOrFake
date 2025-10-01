@@ -55,7 +55,7 @@ export default function Admin() {
   // Compute dashboard stats from realtime users
   const dashboardStats = useMemo(() => {
     const totalUsers = users.length;
-    const activeUsers = users.filter(u => u.status === "active" || u.active === true).length;
+    const activeUsers = users.filter(u => u.status?.state === "active" || u.status === "active" || u.active === true).length;
     // Placeholder fields derived from user stats if exist
     const challengesCompleted = users.reduce((sum, u) => sum + (u.stats?.totalQuestions || 0), 0);
     const correct = users.reduce((sum, u) => sum + (u.stats?.correctAnswers || 0), 0);
@@ -214,11 +214,11 @@ export default function Admin() {
                   <td className="px-6 py-4 text-gray-600">{formatDate(user.createdAt)}</td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      user.status === 'active' || user.active === true
+                      user.status?.state === 'active' || user.status === 'active' || user.active === true
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-gray-100 text-gray-800'
                     }`}>
-                      {user.status === 'active' || user.active === true ? 'ใช้งาน' : 'ไม่ใช้งาน'}
+                      {user.status?.state === 'active' || user.status === 'active' || user.active === true ? 'Active' : 'Unactive'}
                     </span>
                   </td>
                   <td className="px-6 py-4">

@@ -6,7 +6,7 @@ import {
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
-import { getDatabase, ref, set, get, update, child } from 'firebase/database';
+import { getDatabase, ref, set, get, update, child, onDisconnect, onValue, serverTimestamp } from 'firebase/database';
 import { auth } from '../firebase';
 
 const db = getDatabase();
@@ -68,6 +68,13 @@ export function AuthProvider({ children }) {
   // Logout user
   async function logout() {
     try {
+      // mark presence as unactive before signing out
+      const uid = auth.currentUser?.uid;
+      if (uid) {
+        const statusRef = ref(db, 'users/' + uid + '/status');
+        await set(statusRef, { state: 'unactive', lastChanged: serverTimestamp() });
+        try { await onDisconnect(statusRef).cancel(); } catch (_) {}
+      }
       await signOut(auth);
     } catch (error) {
       throw error;
@@ -124,6 +131,38 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
+    // helper to wire user presence with RTDB
+    let connectedUnsubscribe = null;
+    let beforeUnloadHandler = null;
+
+    function setupPresenceFor(uid) {
+      const statusRef = ref(db, 'users/' + uid + '/status');
+      const connectedRef = ref(db, '.info/connected');
+
+      // When we are connected, set active and register onDisconnect to set unactive
+      connectedUnsubscribe = onValue(connectedRef, async (snap) => {
+        const isConnected = snap.val() === true;
+        if (!isConnected) return;
+        try {
+          await onDisconnect(statusRef).set({ state: 'unactive', lastChanged: serverTimestamp() });
+          await set(statusRef, { state: 'active', lastChanged: serverTimestamp() });
+        } catch (e) {
+          console.error('Error setting presence:', e);
+        }
+      });
+
+      // Best-effort set unactive on tab close (onDisconnect is primary)
+      beforeUnloadHandler = () => {
+        try {
+          navigator?.sendBeacon?.(
+            '',
+            ''
+          );
+        } catch (_) {}
+      };
+      window.addEventListener('beforeunload', beforeUnloadHandler);
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       try {
         if (user) {
@@ -136,6 +175,7 @@ export function AuthProvider({ children }) {
               )
             ]);
             setUserRole(role);
+            setupPresenceFor(user.uid);
           } catch (error) {
             console.error('Error getting user role:', error);
             setUserRole('user');
@@ -143,6 +183,9 @@ export function AuthProvider({ children }) {
         } else {
           setCurrentUser(null);
           setUserRole(null);
+          // cleanup presence listeners when signed out
+          try { if (connectedUnsubscribe) connectedUnsubscribe(); } catch (_) {}
+          try { if (beforeUnloadHandler) window.removeEventListener('beforeunload', beforeUnloadHandler); } catch (_) {}
         }
       } catch (error) {
         console.error('Error in auth state change:', error);
@@ -160,6 +203,8 @@ export function AuthProvider({ children }) {
 
     return () => {
       unsubscribe();
+      try { if (connectedUnsubscribe) connectedUnsubscribe(); } catch (_) {}
+      try { if (beforeUnloadHandler) window.removeEventListener('beforeunload', beforeUnloadHandler); } catch (_) {}
       clearTimeout(timeoutId);
     };
   }, []);
