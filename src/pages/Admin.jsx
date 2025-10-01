@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { resetUserRole } from "../utils/resetUserRole";
 import { db } from "../firebase";
-import { onValue, ref } from "firebase/database";
+import { onValue, ref, set, get } from "firebase/database";
 import { 
   Settings, 
   Users, 
@@ -28,9 +28,7 @@ export default function Admin() {
   const tabs = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "users", label: "จัดการผู้ใช้", icon: Users },
-    { id: "content", label: "จัดการเนื้อหา", icon: Upload },
-    { id: "analytics", label: "วิเคราะห์ข้อมูล", icon: TrendingUp },
-    { id: "settings", label: "ตั้งค่า", icon: Settings }
+    { id: "content", label: "จัดการเนื้อหา", icon: Upload }
   ];
 
   // Subscribe to realtime users
@@ -264,11 +262,10 @@ export default function Admin() {
           <h2 className="text-3xl font-bold text-gray-900">จัดการเนื้อหา</h2>
           <p className="text-lg text-gray-600">เพิ่มและจัดการข้อสอบ Daily Challenge</p>
         </div>
-        <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center space-x-2">
-          <Upload className="h-5 w-5" />
-          <span>อัปโหลดข้อสอบ</span>
-        </button>
       </div>
+
+      {/* Upload Items to RTDB */}
+      <UploadItemsCard />
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {challenges.map((challenge) => (
@@ -324,64 +321,7 @@ export default function Admin() {
     </div>
   );
 
-  const renderAnalytics = () => (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">วิเคราะห์ข้อมูล</h2>
-        <p className="text-lg text-gray-600">สถิติและแนวโน้มการใช้งานระบบ</p>
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <h3 className="text-xl font-bold text-gray-900 mb-6">กราฟการใช้งาน</h3>
-        <div className="h-64 bg-gray-100 rounded-xl flex items-center justify-center">
-          <p className="text-gray-500">กราฟจะแสดงที่นี่</p>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderSettings = () => (
-    <div className="space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">ตั้งค่าระบบ</h2>
-        <p className="text-lg text-gray-600">การตั้งค่าทั่วไปของระบบ</p>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">การตั้งค่าข้อสอบ</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">จำนวนข้อสอบต่อวัน</label>
-              <input type="number" className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500" defaultValue="5" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">เวลาที่กำหนด</label>
-              <input type="time" className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <h3 className="text-xl font-bold text-gray-900 mb-6">การแจ้งเตือน</h3>
-          <div className="space-y-4">
-            <label className="flex items-center space-x-3">
-              <input type="checkbox" className="rounded" defaultChecked />
-              <span className="text-gray-700">ส่งอีเมลแจ้งเตือน Daily Challenge</span>
-            </label>
-            <label className="flex items-center space-x-3">
-              <input type="checkbox" className="rounded" />
-              <span className="text-gray-700">แจ้งเตือนเมื่อมีผู้ใช้ใหม่</span>
-            </label>
-            <label className="flex items-center space-x-3">
-              <input type="checkbox" className="rounded" defaultChecked />
-              <span className="text-gray-700">รายงานสถิติประจำสัปดาห์</span>
-            </label>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+ 
 
   return (
     <div className="py-8 animate-fade-in">
@@ -438,6 +378,206 @@ export default function Admin() {
           {activeTab === "analytics" && renderAnalytics()}
           {activeTab === "settings" && renderSettings()}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- Components ----
+function UploadItemsCard() {
+  const [parsing, setParsing] = useState(false);
+  const [result, setResult] = useState({ inserted: 0, errors: [] });
+  const [xlsxModule, setXlsxModule] = useState(null);
+  const [parsedRows, setParsedRows] = useState([]);
+
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
+  }
+
+  function parseCSVLike(text, delimiter) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (lines.length === 0) return [];
+    const headers = lines[0].split(delimiter).map(h => h.trim());
+    return lines.slice(1).map((line) => {
+      const cols = line.split(delimiter);
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = (cols[i] ?? '').trim(); });
+      return obj;
+    });
+  }
+
+  function validateItemShape(item) {
+    // Required fields for items in RTDB
+    const required = ['title', 'text', 'domain'];
+    const missing = required.filter(k => !item || item[k] === undefined || item[k] === null || String(item[k]).trim() === '');
+    if (missing.length > 0) {
+      return { ok: false, message: `ข้อมูลไม่ครบ: ขาด ${missing.join(', ')}` };
+    }
+    // optional fields normalization
+    const normalized = {
+      title: String(item.title),
+      text: String(item.text),
+      domain: String(item.domain),
+      difficulty: item.difficulty || 'easy',
+      topic: Array.isArray(item.topic) ? item.topic : (item.topic ? String(item.topic).split('|').map(s => s.trim()).filter(Boolean) : []),
+      publishedAt: item.publishedAt || null,
+      createdAt: Date.now(),
+    };
+    if (item.label !== undefined) normalized.label = Number(item.label);
+    return { ok: true, value: normalized };
+  }
+
+  async function handleFiles(files) {
+    if (!files || files.length === 0) return;
+    setParsing(true);
+    const file = files[0];
+    const name = (file.name || '').toLowerCase();
+    const errors = [];
+    let rows = [];
+
+    try {
+      if (name.endsWith('.json')) {
+        const text = await readFileAsText(file);
+        const data = JSON.parse(text);
+        rows = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
+      } else if (name.endsWith('.csv')) {
+        const text = await readFileAsText(file);
+        rows = parseCSVLike(text, ',');
+      } else if (name.endsWith('.tsv')) {
+        const text = await readFileAsText(file);
+        rows = parseCSVLike(text, '\t');
+  } else if (name.endsWith('.xls') || name.endsWith('.xlsx')) {
+        const XLSX = xlsxModule || (await import('xlsx'));
+        if (!xlsxModule) setXlsxModule(XLSX);
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+      } else {
+        throw new Error('ชนิดไฟล์ไม่รองรับ (รองรับ .json .csv .tsv .xls(x)*)');
+      }
+    } catch (e) {
+      setResult({ inserted: 0, errors: [String(e.message || e)] });
+      setParsing(false);
+      return;
+    }
+
+    // Only validate and stage rows; do not push yet
+    const staged = [];
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const v = validateItemShape(row);
+      if (!v.ok) {
+        errors.push(`แถวที่ ${i + 1}: ${v.message}`);
+        continue;
+      }
+      staged.push(v.value);
+    }
+
+    setParsedRows(staged);
+    setResult({ inserted: 0, errors });
+    setParsing(false);
+  }
+
+  async function pushToDatabase() {
+    if (parsing || parsedRows.length === 0) return;
+    setParsing(true);
+    const errors = [];
+    let inserted = 0;
+
+    try {
+      const itemsRef = ref(db, 'items');
+      const snapshot = await get(itemsRef);
+      const existing = snapshot.exists() ? snapshot.val() : {};
+
+      const existingKeys = Object.keys(existing || {});
+      const numberMatches = existingKeys
+        .map((k) => {
+          const m = /^item(\d+)$/.exec(k);
+          return m ? Number(m[1]) : null;
+        })
+        .filter((n) => n !== null);
+
+      const maxNumber = numberMatches.length > 0 ? Math.max(...numberMatches) : 0;
+
+      // Determine padding from existing keys (default to 3 digits)
+      const padLength = (() => {
+        const lengths = existingKeys
+          .map((k) => {
+            const m = /^item(\d+)$/.exec(k);
+            return m ? m[1].length : null;
+          })
+          .filter((v) => v !== null);
+        return lengths.length > 0 ? Math.max(...lengths) : 3;
+      })();
+
+      for (let i = 0; i < parsedRows.length; i++) {
+        try {
+          const nextNumber = maxNumber + 1 + i;
+          const key = `item${String(nextNumber).padStart(padLength, '0')}`;
+          await set(ref(db, `items/${key}`), parsedRows[i]);
+          inserted += 1;
+        } catch (e) {
+          errors.push(`บันทึกแถวที่ ${i + 1} ล้มเหลว: ${String(e.message || e)}`);
+        }
+      }
+    } catch (e) {
+      errors.push(String(e.message || e));
+    }
+
+    setResult({ inserted, errors });
+    setParsing(false);
+    if (inserted > 0) setParsedRows([]);
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-8">
+      <h3 className="text-xl font-bold text-gray-900 mb-4">อัปโหลดรายการ Items ไปยังฐานข้อมูล</h3>
+      <p className="text-sm text-gray-600 mb-4">รองรับไฟล์ .json, .csv, .tsv, .xls, .xlsx (กรุณาให้มีหัวคอลัมน์อย่างน้อย title, text, domain)</p>
+      <div className="flex items-center space-x-4">
+        <input
+          type="file"
+          accept=".json,.csv,.tsv,.xls,.xlsx"
+          onChange={(e) => handleFiles(e.target.files)}
+          className="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          disabled={parsing}
+        />
+        <button
+          type="button"
+          onClick={pushToDatabase}
+          disabled={parsing || parsedRows.length === 0}
+          className={`px-4 py-2 rounded-md font-medium ${
+            parsedRows.length === 0 || parsing
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          อัปโหลดเข้าสู่ฐานข้อมูล
+        </button>
+        {parsing && <span className="text-gray-600">กำลังประมวลผล...</span>}
+      </div>
+
+      <div className="mt-4">
+        <div className="text-sm text-gray-700">เตรียมอัปโหลด: <span className="font-medium">{parsedRows.length}</span> รายการ | เพิ่มสำเร็จ: <span className="font-medium text-green-700">{result.inserted}</span></div>
+        {result.errors.length > 0 && (
+          <div className="mt-2 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 space-y-1">
+            <div className="font-medium">พบข้อผิดพลาด {result.errors.length} รายการ</div>
+            <ul className="list-disc pl-5 text-sm">
+              {result.errors.slice(0, 10).map((msg, idx) => (
+                <li key={idx}>{msg}</li>
+              ))}
+            </ul>
+            {result.errors.length > 10 && (
+              <div className="text-xs text-red-600">แสดงเพียง 10 ข้อแรก</div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
