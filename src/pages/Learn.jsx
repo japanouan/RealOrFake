@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { BookOpen, Lightbulb, Shield, Search, Link, BarChart3, Users, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
+import { BookOpen, Lightbulb, Shield, Search, Target, BarChart3, Feather, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
 
 export default function Learn() {
   const [activeTab, setActiveTab] = useState("tips");
@@ -22,13 +22,13 @@ export default function Learn() {
       ]
     },
     {
-      icon: Link,
-      title: "ตรวจสอบการอ้างอิง",
-      description: "มองหาแหล่งข้อมูลที่อ้างอิงและลิงก์ที่เกี่ยวข้อง",
+      icon: Feather,
+      title: "สังเกตการใช้ภาษา (Language)",
+      description: "ข่าวปลอมมักใช้ภาษาที่กระตุ้นอารมณ์ ไม่เป็นกลาง",
       details: [
-        "มีลิงก์ไปยังแหล่งข้อมูลต้นฉบับหรือไม่",
-        "การอ้างอิงมีความน่าเชื่อถือหรือไม่",
-        "ข้อมูลตรงกับแหล่งอื่นหรือไม่"
+        "มีคำพาดหัวแบบ Clickbait หรือไม่? (เช่น ด่วน! ช็อก! เหลือเชื่อ!)",
+        "ใช้คำที่ดูเกินจริง หรือรับประกันผล 100% หรือไม่?",
+        "มีคำผิด สะกดผิด หรือใช้ไวยากรณ์แปลกๆ หรือไม่?"
       ]
     },
     {
@@ -42,13 +42,13 @@ export default function Learn() {
       ]
     },
     {
-      icon: Users,
-      title: "ตรวจสอบผู้เขียน",
-      description: "ดูประวัติและความเชี่ยวชาญของนักข่าว",
+      icon: Target,
+      title: "วิเคราะห์น้ำเสียงและวัตถุประสงค์ (Tone & Purpose)",
+      description: "พยายามจับให้ได้ว่าข่าวต้องการ 'บอกเล่า' หรือ 'ชี้นำ'",
       details: [
-        "ผู้เขียนมีประสบการณ์ในหัวข้อนี้หรือไม่",
-        "มีประวัติการเขียนข่าวที่น่าเชื่อถือหรือไม่",
-        "มีข้อมูลติดต่อหรือประวัติส่วนตัวหรือไม่"
+        "น้ำเสียงของข่าวเป็นกลาง หรือพยายามสร้างความเกลียดชัง/ความกลัว?",
+        "ข่าวนี้มีเจตนาเพื่อให้ข้อมูล หรือเพื่อขายของ/โฆษณาชวนเชื่อ?",
+        "มีการให้ข้อมูลครบทุกด้าน หรือเลือกเสนอแค่ด้านเดียว?"
       ]
     }
   ];
@@ -95,6 +95,12 @@ export default function Learn() {
       url: "https://snopes.com",
       category: "International"
     }
+    ,{
+      title: "โดย อสมท. ร่วมกับหน่วยงานต่างๆ",
+      description: "ชัวร์ก่อนแชร์",
+      url: "https://www.sure.moph.go.th/",
+      category: "Thai"
+    }
   ];
 
   const renderTips = () => (
@@ -137,11 +143,11 @@ export default function Learn() {
         <h3 className="text-2xl font-bold mb-6 text-center">กระบวนการตรวจสอบ 5 ขั้นตอน</h3>
         <div className="grid md:grid-cols-5 gap-4">
           {[
-            { step: "1", title: "หยุด", desc: "หยุดอ่านและคิดก่อนแชร์" },
-            { step: "2", title: "ตรวจสอบ", desc: "ดูแหล่งที่มาของข่าว" },
-            { step: "3", title: "เปรียบเทียบ", desc: "หาข่าวจากแหล่งอื่น" },
-            { step: "4", title: "วิเคราะห์", desc: "ดูความสมเหตุสมผล" },
-            { step: "5", title: "ตัดสินใจ", desc: "ตัดสินใจว่าควรแชร์หรือไม่" }
+            { step: 1, title: "หยุดคิดและตั้งสติ", desc: "ก่อนจะเชื่อหรือแชร์ ลองหายใจลึกๆ อย่าเพิ่งรีบตัดสินใจจากพาดหัวข่าว" },
+            { step: 2, title: "ตรวจสอบแหล่งข่าว", desc: "ข่าวนี้มาจากใคร? แหล่งข่าวนี้น่าเชื่อถือหรือไม่? มีประวัติอย่างไร?" },
+            { step: 3, title: "หาหลักฐานสนับสนุน", desc: "มีสำนักข่าวที่น่าเชื่อถืออื่นๆ รายงานเรื่องเดียวกันนี้หรือไม่?" },
+            { step: 4, title: "สังเกตสัญญาณเตือน", desc: "มองหาการใช้ภาษาที่กระตุ้นอารมณ์, ภาพที่ดูผิดปกติ, หรือการอ้างที่ไม่มีที่มา" },
+            { step: 5, title: "ปรึกษาผู้เชี่ยวชาญ", desc: "หากไม่แน่ใจ ลองใช้เว็บไซต์ตรวจสอบข่าว หรือถามผู้ที่มีความรู้ในเรื่องนั้นๆ" }
           ].map((item, index) => (
             <div key={index} className="text-center">
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
