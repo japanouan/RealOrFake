@@ -4,44 +4,83 @@ import { getDatabase, ref, onValue } from 'firebase/database';
 export default function Leaderboard() {
   const [users, setUsers] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [view, setView] = useState("daily"); // "daily" | "all"
 
   useEffect(() => {
     const db = getDatabase();
-    const usersRef = ref(db, 'users');
+    const aggRef = ref(db, "userAggregates");
+    const usersRef = ref(db, "users");
 
-    const unsubscribe = onValue(usersRef, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
+    const unsubscribeAgg = onValue(aggRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        setUsers([]);
+        setTotalUsers(0);
+        return;
+      }
 
-        // แปลง object -> array
-        const usersArray = Object.entries(data).map(([uid, user]) => ({
-          id: uid,
-          name: user.displayName || 'ไม่ระบุชื่อ',
-          email: user.email || '',
-          correct: user.stats?.correct ?? 0,
-          attempts: user.stats?.attempts ?? 0,
-          f1: user.stats?.f1 ?? 0,
-          streak: user.stats?.streak ?? 0,
-          longestStreak: user.longestStreak ?? 0,
-        }));
+      const aggData = snapshot.val();
 
-        // เรียงลำดับตามจำนวน correct (ปรับเป็น f1 หรือ streak ได้)
-        usersArray.sort((a, b) => b.correct - a.correct);
+      // เอาวันปัจจุบัน (yyyy-mm-dd)
+      const today = new Date().toISOString().split("T")[0];
+
+      // ไปดึง users เพื่อ map displayName
+      onValue(usersRef, (snapUsers) => {
+        const usersData = snapUsers.exists() ? snapUsers.val() : {};
+
+        const usersArray = Object.entries(aggData).map(([uid, agg]) => {
+          const userProfile = usersData[uid] || {};
+          let stats;
+
+          if (view === "daily") {
+            stats = agg.daily?.[today] || { attempts: 0, correct: 0, totalScore: 0 };
+          } else {
+            stats = agg.all || { attempts: 0, correct: 0, totalScore: 0 };
+          }
+
+          return {
+            id: uid,
+            name: userProfile.displayName || "ไม่ระบุชื่อ",
+            attempts: stats.attempts || 0,
+            correct: stats.correct || 0,
+            totalScore: stats.totalScore || 0,
+          };
+        });
+
+        // sort ตาม totalScore
+        usersArray.sort((a, b) => b.totalScore - a.totalScore);
 
         setUsers(usersArray);
         setTotalUsers(usersArray.length);
-      } else {
-        setUsers([]);
-        setTotalUsers(0);
-      }
+      });
     });
 
-    return () => unsubscribe();
-  }, []);
+    return () => unsubscribeAgg();
+  }, [view]);
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">🏆 Leaderboard</h1>
+      <h1 className="text-2xl font-bold mb-4">🏆 Daily Challenge Leaderboard</h1>
+
+      {/* Toggle View */}
+      <div className="mb-4 flex gap-2">
+        <button
+          onClick={() => setView("daily")}
+          className={`px-4 py-2 rounded ${
+            view === "daily" ? "bg-purple-600 text-white" : "bg-gray-200"
+          }`}
+        >
+          Daily
+        </button>
+        <button
+          onClick={() => setView("all")}
+          className={`px-4 py-2 rounded ${
+            view === "all" ? "bg-purple-600 text-white" : "bg-gray-200"
+          }`}
+        >
+          All-Time
+        </button>
+      </div>
+
       <p className="mb-4">จำนวนผู้ใช้ทั้งหมด: {totalUsers}</p>
 
       <table className="w-full border-collapse">
@@ -49,10 +88,9 @@ export default function Leaderboard() {
           <tr className="bg-gray-200 text-left">
             <th className="p-2">อันดับ</th>
             <th className="p-2">ชื่อผู้ใช้</th>
-            <th className="p-2">ถูกต้อง</th>
-            <th className="p-2">พยายาม</th>
-            <th className="p-2">F1</th>
-            <th className="p-2">Streak</th>
+            <th className="p-2">Attempts</th>
+            <th className="p-2">Correct</th>
+            <th className="p-2">Total Score</th>
           </tr>
         </thead>
         <tbody>
@@ -60,10 +98,9 @@ export default function Leaderboard() {
             <tr key={u.id} className="border-b">
               <td className="p-2">{index + 1}</td>
               <td className="p-2">{u.name}</td>
-              <td className="p-2">{u.correct}</td>
               <td className="p-2">{u.attempts}</td>
-              <td className="p-2">{u.f1}</td>
-              <td className="p-2">{u.streak}</td>
+              <td className="p-2">{u.correct}</td>
+              <td className="p-2">{u.totalScore}</td>
             </tr>
           ))}
         </tbody>
