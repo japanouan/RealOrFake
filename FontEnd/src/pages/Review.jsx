@@ -89,7 +89,6 @@ export default function Review() {
                   source: itemData?.domain || "ไม่ระบุแหล่งที่มา",
                   date: submission.createdAt ? new Date(submission.createdAt).toLocaleDateString('th-TH') : dateKey,
                   domain: itemData?.topic?.[0] || "general",
-                  difficulty: itemData?.difficulty || "medium",
                   userAnswer: userAnswer,
                   correctAnswer: correctAnswer,
                   isCorrect: isCorrect,
@@ -204,18 +203,6 @@ export default function Review() {
     }))
   });
 
-  const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case "easy":
-        return "bg-green-100 text-green-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
-      case "hard":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   const getDomainIcon = (domain) => {
     switch (domain) {
@@ -376,9 +363,6 @@ export default function Review() {
                     ) : (
                       <XCircle className="h-6 w-6 text-red-600" />
                     )}
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(item.difficulty)}`}>
-                      {item.difficulty}
-                    </span>
                   </div>
                 </div>
               </div>

@@ -381,16 +381,6 @@ export default function Admin() {
                 <span className="text-sm font-medium text-gray-900">{challenge.domain}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">ระดับความยาก:</span>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  challenge.difficulty === 'easy' ? 'bg-green-100 text-green-800' :
-                  challenge.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {challenge.difficulty}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-600">วันที่สร้าง:</span>
                 <span className="text-sm font-medium text-gray-900">{challenge.createdDate}</span>
               </div>
@@ -841,7 +831,6 @@ function UploadItemsCard() {
     
     "source": { ".validate": "newData.isString() || newData.val() === null" },
     "publishedAt": { ".validate": "newData.isNumber() || newData.val() === null" },
-    "difficulty": { ".validate": "newData.isString() && (newData.val() === 'easy' || newData.val() === 'med' || newData.val() === 'hard') || newData.val() === null" },
     "topic": { ".validate": "newData.exists() || newData.val() === null" },
     "createdAt": { ".validate": "newData.isNumber() || newData.val() === null" },
     
