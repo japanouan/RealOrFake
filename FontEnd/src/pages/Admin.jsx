@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { resetUserRole } from "../utils/resetUserRole";
-import { db } from "../firebase";
+import { db, auth } from "../firebase";
 import { onValue, ref, set, get } from "firebase/database";
+import { signInWithCustomToken } from "firebase/auth";
 import { 
   Settings, 
   Users, 
@@ -80,6 +81,83 @@ export default function Admin() {
       return d.toLocaleDateString();
     } catch {
       return String(value);
+    }
+  };
+
+  // Function to clear all items from Firebase
+  const clearAllItems = async () => {
+    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลทั้งหมดในตาราง items? การกระทำนี้ไม่สามารถย้อนกลับได้!')) {
+      return;
+    }
+
+    try {
+      const itemsRef = ref(db, 'items');
+      await set(itemsRef, null); // Set to null to delete all data
+      alert('ลบข้อมูลทั้งหมดเรียบร้อยแล้ว!');
+    } catch (error) {
+      console.error('Error clearing items:', error);
+      alert('เกิดข้อผิดพลาดในการลบข้อมูล: ' + error.message);
+    }
+  };
+
+  // Function to create items table structure
+  const createItemsTable = async () => {
+    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะสร้างตาราง items? หากมีข้อมูลอยู่แล้วจะถูกแทนที่!')) {
+      return;
+    }
+
+    try {
+      const itemsRef = ref(db, 'items');
+      
+      // สร้างโครงสร้างตาราง items พร้อมข้อมูลตัวอย่าง
+      const sampleData = {
+        "item001": {
+          "title": "ตัวอย่างข่าวที่ 1",
+          "text": "นี่คือตัวอย่างข่าวสำหรับทดสอบระบบ",
+          "domain": "ไม่ระบุแหล่งที่มา",
+          "label": 0,
+          "clueWords": ["ตัวอย่าง", "ข่าว", "ทดสอบ"],
+          "clue_words_analysis": [
+            {
+              "word": "ตัวอย่าง",
+              "analysis": "คำ 'ตัวอย่าง' เป็นคำสำคัญที่โมเดล AI ใช้ในการวิเคราะห์ว่าข่าวนี้เป็นข่าวปลอม",
+              "found_in_reason": false
+            }
+          ],
+          "confidence": 0.5,
+          "processedAt": Date.now(),
+          "source": null,
+          "publishedAt": null,
+          "topic": null,
+          "createdAt": Date.now()
+        },
+        "item002": {
+          "title": "ตัวอย่างข่าวที่ 2",
+          "text": "นี่คือตัวอย่างข่าวที่สองสำหรับทดสอบระบบ",
+          "domain": "ไม่ระบุแหล่งที่มา",
+          "label": 1,
+          "clueWords": ["ตัวอย่าง", "ข่าว", "สอง"],
+          "clue_words_analysis": [
+            {
+              "word": "ตัวอย่าง",
+              "analysis": "คำ 'ตัวอย่าง' เป็นคำสำคัญที่โมเดล AI ใช้ในการวิเคราะห์ว่าข่าวนี้เป็นข่าวจริง",
+              "found_in_reason": false
+            }
+          ],
+          "confidence": 0.7,
+          "processedAt": Date.now(),
+          "source": null,
+          "publishedAt": null,
+          "topic": null,
+          "createdAt": Date.now()
+        }
+      };
+
+      await set(itemsRef, sampleData);
+      alert('สร้างตาราง items พร้อมข้อมูลตัวอย่างเรียบร้อยแล้ว!');
+    } catch (error) {
+      console.error('Error creating items table:', error);
+      alert('เกิดข้อผิดพลาดในการสร้างตาราง: ' + error.message);
     }
   };
 
@@ -262,6 +340,22 @@ export default function Admin() {
           <h2 className="text-3xl font-bold text-gray-900">จัดการเนื้อหา</h2>
           <p className="text-lg text-gray-600">เพิ่มและจัดการข้อสอบ Daily Challenge</p>
         </div>
+        <div className="flex space-x-3">
+          <button 
+            onClick={createItemsTable}
+            className="bg-green-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-700 transition-colors flex items-center space-x-2"
+          >
+            <Plus className="h-5 w-5" />
+            <span>สร้างตาราง items</span>
+          </button>
+          <button 
+            onClick={clearAllItems}
+            className="bg-red-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-red-700 transition-colors flex items-center space-x-2"
+          >
+            <Trash2 className="h-5 w-5" />
+            <span>ลบข้อมูลทั้งหมด</span>
+          </button>
+        </div>
       </div>
 
       {/* Upload Items to RTDB */}
@@ -412,23 +506,24 @@ function UploadItemsCard() {
   }
 
   function validateItemShape(item) {
-    // Required fields for items in RTDB
-    const required = ['title', 'text', 'domain'];
+    // Required fields for items in RTDB - only title and text
+    const required = ['title', 'text'];
     const missing = required.filter(k => !item || item[k] === undefined || item[k] === null || String(item[k]).trim() === '');
     if (missing.length > 0) {
       return { ok: false, message: `ข้อมูลไม่ครบ: ขาด ${missing.join(', ')}` };
     }
-    // optional fields normalization
+    // Basic normalization - AI will add label and clueWords later
     const normalized = {
       title: String(item.title),
       text: String(item.text),
-      domain: String(item.domain),
-      difficulty: item.difficulty || 'easy',
-      topic: Array.isArray(item.topic) ? item.topic : (item.topic ? String(item.topic).split('|').map(s => s.trim()).filter(Boolean) : []),
-      publishedAt: item.publishedAt || null,
-      createdAt: Date.now(),
+      domain: item.domain || 'ไม่ระบุแหล่งที่มา',
+      label: 0, // Default to 0, will be updated by AI
+      // Optional fields that rules allow
+      source: null,
+      publishedAt: null,
+      topic: null,
+      createdAt: Date.now()
     };
-    if (item.label !== undefined) normalized.label = Number(item.label);
     return { ok: true, value: normalized };
   }
 
@@ -444,7 +539,18 @@ function UploadItemsCard() {
       if (name.endsWith('.json')) {
         const text = await readFileAsText(file);
         const data = JSON.parse(text);
-        rows = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
+        
+        // Handle different JSON structures
+        if (Array.isArray(data)) {
+          rows = data;
+        } else if (Array.isArray(data.items)) {
+          rows = data.items;
+        } else if (data.items && typeof data.items === 'object') {
+          // Handle nested object structure like {items: {key1: {...}, key2: {...}}}
+          rows = Object.values(data.items);
+        } else {
+          rows = [];
+        }
       } else if (name.endsWith('.csv')) {
         const text = await readFileAsText(file);
         rows = parseCSVLike(text, ',');
@@ -485,11 +591,102 @@ function UploadItemsCard() {
     setParsing(false);
   }
 
+  // Function to authenticate as admin for database operations
+  async function authenticateAsAdmin() {
+    try {
+      // Try to get admin token from backend
+      const response = await fetch('http://127.0.0.1:8000/api/v1/admin/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: currentUser?.email || 'admin@example.com'
+        })
+      });
+      
+      if (response.ok) {
+        const { token } = await response.json();
+        await signInWithCustomToken(auth, token);
+        return true;
+      }
+    } catch (error) {
+      console.warn('Admin authentication failed:', error);
+    }
+    return false;
+  }
+
+  // Function to call AI API for processing
+  async function processWithAI(title, text) {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/v1/admin/process', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: title,
+          text: text,
+          processOnly: true,
+          userId: 'admin_processing'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI API error: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('AI API Response:', result);
+      
+      // Extract clueWords from the response - ensure it's always an array
+      let clueWords = [];
+      if (result.clueWords && Array.isArray(result.clueWords)) {
+        clueWords = result.clueWords.filter(word => word && word.trim() !== '');
+      } else if (result.clue_words_analysis && Array.isArray(result.clue_words_analysis)) {
+        clueWords = result.clue_words_analysis
+          .map(item => item.word || item)
+          .filter(word => word && word.trim() !== '');
+      }
+      
+      // Ensure clue_words_analysis is always an array
+      let clue_words_analysis = [];
+      if (result.clue_words_analysis && Array.isArray(result.clue_words_analysis)) {
+        clue_words_analysis = result.clue_words_analysis;
+      }
+      
+      return {
+        label: result.label || 0,
+        clueWords: clueWords,
+        confidence: result.confidence || 0.5,
+        clue_words_analysis: result.clue_words_analysis || [],
+        ai_reasoning: result.ai_reasoning || ""
+      };
+    } catch (error) {
+      console.warn('AI processing failed:', error);
+      // Return default values if AI fails
+      return {
+        label: 0,
+        clueWords: [],
+        confidence: 0.5,
+        clue_words_analysis: [],
+        ai_reasoning: ""
+      };
+    }
+  }
+
   async function pushToDatabase() {
     if (parsing || parsedRows.length === 0) return;
     setParsing(true);
     const errors = [];
     let inserted = 0;
+
+    // Try to authenticate as admin first
+    const isAdmin = await authenticateAsAdmin();
+    if (!isAdmin) {
+      console.warn('Admin authentication failed, trying with current user...');
+      // Continue with current user - might work if rules allow
+    }
 
     try {
       const itemsRef = ref(db, 'items');
@@ -519,12 +716,47 @@ function UploadItemsCard() {
 
       for (let i = 0; i < parsedRows.length; i++) {
         try {
+          const item = parsedRows[i];
+          console.log(`Processing item ${i + 1}/${parsedRows.length}: ${item.title}`);
+          
+          // Call AI API to process the item
+          const aiResult = await processWithAI(item.title, item.text);
+          
+          // Create final item with AI results
+          const finalItem = {
+            ...item,
+            label: aiResult.label,
+            // Store clueWords as Array in Firebase - ensure it's always an array
+            clueWords: Array.isArray(aiResult.clueWords) ? aiResult.clueWords : [],
+            confidence: aiResult.confidence,
+            processedAt: Date.now(),
+            // Store full clue_words_analysis from AI - ensure it's always an array
+            clue_words_analysis: Array.isArray(aiResult.clue_words_analysis) ? aiResult.clue_words_analysis : [],
+            // Store AI reasoning explanation
+            ai_reasoning: aiResult.ai_reasoning || ""
+          };
+
           const nextNumber = maxNumber + 1 + i;
           const key = `item${String(nextNumber).padStart(padLength, '0')}`;
-          await set(ref(db, `items/${key}`), parsedRows[i]);
+          await set(ref(db, `items/${key}`), finalItem);
           inserted += 1;
+          
+          console.log(`Item ${i + 1} processed:`, {
+            title: item.title,
+            label: aiResult.label,
+            clueWords: aiResult.clueWords,
+            clueWordsCount: aiResult.clueWords.length,
+            clue_words_analysis: aiResult.clue_words_analysis,
+            confidence: aiResult.confidence,
+            ai_reasoning: aiResult.ai_reasoning
+          });
         } catch (e) {
-          errors.push(`บันทึกแถวที่ ${i + 1} ล้มเหลว: ${String(e.message || e)}`);
+          const errorMsg = String(e.message || e);
+          if (errorMsg.includes('PERMISSION_DENIED')) {
+            errors.push(`แถวที่ ${i + 1}: ไม่มีสิทธิ์เข้าถึงฐานข้อมูล - กรุณาตรวจสอบสิทธิ์ Admin`);
+          } else {
+            errors.push(`ประมวลผลแถวที่ ${i + 1} ล้มเหลว: ${errorMsg}`);
+          }
         }
       }
     } catch (e) {
@@ -538,8 +770,11 @@ function UploadItemsCard() {
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-8">
-      <h3 className="text-xl font-bold text-gray-900 mb-4">อัปโหลดรายการ Items ไปยังฐานข้อมูล</h3>
-      <p className="text-sm text-gray-600 mb-4">รองรับไฟล์ .json, .csv, .tsv, .xls, .xlsx (กรุณาให้มีหัวคอลัมน์อย่างน้อย title, text, domain)</p>
+      <h3 className="text-xl font-bold text-gray-900 mb-4">อัปโหลดรายการ Items พร้อม AI Processing</h3>
+      <p className="text-sm text-gray-600 mb-4">
+        รองรับไฟล์ .json, .csv, .tsv, .xls, .xlsx (ต้องมีคอลัมน์ title และ text เท่านั้น)<br/>
+        ระบบจะใช้ AI ประมวลผลเพื่อสร้าง label (0/1) และ clueWords อัตโนมัติ
+      </p>
       <div className="flex items-center space-x-4">
         <input
           type="file"
@@ -558,13 +793,22 @@ function UploadItemsCard() {
               : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
         >
-          อัปโหลดเข้าสู่ฐานข้อมูล
+          {parsing ? 'กำลังประมวลผลด้วย AI...' : 'อัปโหลดและประมวลผลด้วย AI'}
         </button>
-        {parsing && <span className="text-gray-600">กำลังประมวลผล...</span>}
+        {parsing && (
+          <div className="flex items-center space-x-2 text-blue-600">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+            <span className="text-sm">กำลังประมวลผลด้วย AI...</span>
+          </div>
+        )}
       </div>
 
       <div className="mt-4">
-        <div className="text-sm text-gray-700">เตรียมอัปโหลด: <span className="font-medium">{parsedRows.length}</span> รายการ | เพิ่มสำเร็จ: <span className="font-medium text-green-700">{result.inserted}</span></div>
+        <div className="text-sm text-gray-700">
+          เตรียมอัปโหลด: <span className="font-medium">{parsedRows.length}</span> รายการ | 
+          เพิ่มสำเร็จ: <span className="font-medium text-green-700">{result.inserted}</span> |
+          AI จะกำหนด clueWords สำหรับแต่ละรายการ
+        </div>
         {result.errors.length > 0 && (
           <div className="mt-2 bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 space-y-1">
             <div className="font-medium">พบข้อผิดพลาด {result.errors.length} รายการ</div>
@@ -575,6 +819,49 @@ function UploadItemsCard() {
             </ul>
             {result.errors.length > 10 && (
               <div className="text-xs text-red-600">แสดงเพียง 10 ข้อแรก</div>
+            )}
+            {result.errors.some(e => e.includes('PERMISSION_DENIED')) && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <div className="font-medium text-red-800">🔧 วิธีแก้ไขปัญหา Permission:</div>
+                <div className="text-sm text-red-700 mt-2 space-y-2">
+                  <div><strong>1. แก้ไข Firebase Database Rules:</strong></div>
+                  <div className="ml-4">
+                    ไปที่ Firebase Console → Database → Rules → แก้ไข rules เป็น:
+                  </div>
+                  <pre className="text-xs bg-red-100 p-2 rounded ml-4 overflow-x-auto">
+{`"items": {
+  ".read": true,
+  ".write": "auth != null",
+  "$itemId": {
+    ".validate": "newData.hasChildren(['title','text','domain','label'])",
+    "title": { ".validate": "newData.isString()" },
+    "text": { ".validate": "newData.isString()" },
+    "domain": { ".validate": "newData.isString()" },
+    "label": { ".validate": "newData.isNumber() && (newData.val() === 0 || newData.val() === 1)" },
+    
+    "source": { ".validate": "newData.isString() || newData.val() === null" },
+    "publishedAt": { ".validate": "newData.isNumber() || newData.val() === null" },
+    "difficulty": { ".validate": "newData.isString() && (newData.val() === 'easy' || newData.val() === 'med' || newData.val() === 'hard') || newData.val() === null" },
+    "topic": { ".validate": "newData.exists() || newData.val() === null" },
+    "createdAt": { ".validate": "newData.isNumber() || newData.val() === null" },
+    
+    // เพิ่ม fields ใหม่สำหรับ AI analysis
+    "clueWords": { ".validate": "newData.exists() || newData.val() === null" },
+    "clue_words_analysis": { ".validate": "newData.exists() || newData.val() === null" },
+    "confidence": { ".validate": "newData.isNumber() || newData.val() === null" },
+    "processedAt": { ".validate": "newData.isNumber() || newData.val() === null" },
+    "aiAnalysis": { ".validate": "newData.exists() || newData.val() === null" },
+    "ai_reasoning": { ".validate": "newData.isString() || newData.val() === null" }
+  }
+}`}
+                  </pre>
+                  <div><strong>2. กด "Publish" เพื่อบันทึก rules</strong></div>
+                  <div><strong>3. ลองอัปโหลดใหม่</strong></div>
+                  <div className="mt-2 text-xs text-gray-600">
+                    <strong>หมายเหตุ:</strong> เพิ่ม fields ใหม่สำหรับ AI analysis: clueWords, clue_words_analysis, confidence, processedAt, aiAnalysis, ai_reasoning
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}

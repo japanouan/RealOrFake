@@ -14,8 +14,52 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from inference.predictor import Predictor, get_predictor
 from core.config import settings
 from inference.flags_and_suggestions import (
-    extract_signals, run_logic_flags, build_suggestions, compare_reasoning
+    extract_signals, run_logic_flags, build_suggestions, compare_reasoning, detect_fake_news_indicators
 )
+
+def generate_ai_reasoning(label: int, probability: float, clue_words_analysis: List[Dict], fake_indicators: List[str], text: str) -> str:
+    """
+    สร้างคำอธิบายเป็นภาษาอังกฤษว่าทำไม AI ถึงคิดว่าข้อความนั้นผิดปกติ
+    """
+    if label == 0:  # ข่าวปลอม
+        # หาคำสำคัญที่บ่งบอกถึงข่าวปลอม
+        fake_indicators_found = [word for word in fake_indicators if word.lower() in text.lower()]
+        key_clues = [clue['word'] for clue in clue_words_analysis[:3]]  # เอา 3 คำสำคัญแรก
+        
+        reasoning_parts = []
+        
+        # เริ่มต้นด้วยการสรุป
+        reasoning_parts.append(f"Based on AI analysis, this content is classified as FAKE NEWS with {probability:.1%} confidence.")
+        
+        # อธิบายคำสำคัญ
+        if key_clues:
+            reasoning_parts.append(f"Key indicators include: {', '.join(key_clues)}")
+        
+        # อธิบายคำที่บ่งบอกถึงข่าวปลอม
+        if fake_indicators_found:
+            reasoning_parts.append(f"Suspicious language patterns detected: {', '.join(fake_indicators_found[:3])}")
+        
+        # อธิบายลักษณะทั่วไป
+        reasoning_parts.append("The content exhibits characteristics commonly associated with fake news, such as sensational language, unverified claims, or misleading information.")
+        
+        return " ".join(reasoning_parts)
+    
+    else:  # ข่าวจริง
+        key_clues = [clue['word'] for clue in clue_words_analysis[:3]]  # เอา 3 คำสำคัญแรก
+        
+        reasoning_parts = []
+        
+        # เริ่มต้นด้วยการสรุป
+        reasoning_parts.append(f"Based on AI analysis, this content is classified as GENUINE NEWS with {probability:.1%} confidence.")
+        
+        # อธิบายคำสำคัญ
+        if key_clues:
+            reasoning_parts.append(f"Key indicators include: {', '.join(key_clues)}")
+        
+        # อธิบายลักษณะทั่วไป
+        reasoning_parts.append("The content appears to be factual, well-structured, and lacks characteristics commonly associated with fake news.")
+        
+        return " ".join(reasoning_parts)
 
 def predict_challenge(
     text: str,
@@ -41,6 +85,10 @@ def predict_challenge(
         # ✅ FIX: ประมวลผล Clues ที่ได้จากโมเดลให้เป็นโครงสร้างที่ถูกต้อง
         clue_words_analysis = []
         clue_terms = []
+        
+        # ✅ เพิ่มการตรวจจับคำที่บ่งบอกถึงข่าวปลอม
+        fake_indicators = detect_fake_news_indicators(text)
+        
         if raw_clues:
             # ดึง list ของคำ (token) ออกมา
             clue_terms = [c.get('token', '').strip().lower() for c in raw_clues]
@@ -52,9 +100,19 @@ def predict_challenge(
                     continue
                 
                 # ตรวจสอบว่าผู้ใช้ได้กล่าวถึงคำใบ้นี้ในเหตุผลหรือไม่
-                found = clue_word.lower() in user_reasoning.lower() if user_reasoning else False
+                # สำหรับ Admin processing (ไม่มี user_reasoning) ให้เป็น False
+                found = False
+                if user_reasoning and user_reasoning.strip():
+                    found = clue_word.lower() in user_reasoning.lower()
                 
-                analysis_text = "คำนี้เป็นหนึ่งในปัจจัยสำคัญที่ AI ใช้ในการตัดสินใจ"
+                # ✅ สร้างคำอธิบายที่เน้นการตรวจจับข่าวปลอม (ภาษาอังกฤษ)
+                if label == 0:  # ข่าวปลอม
+                    if clue_word.lower() in [ind.lower() for ind in fake_indicators]:
+                        analysis_text = f"The word '{clue_word}' indicates fake news characteristics (e.g., emotional language, exaggeration)"
+                    else:
+                        analysis_text = f"The word '{clue_word}' is a key indicator that led the AI to classify this as fake news"
+                else:  # ข่าวจริง
+                    analysis_text = f"The word '{clue_word}' is a key indicator that led the AI to classify this as genuine news"
                 
                 clue_words_analysis.append({
                     "word": clue_word,
@@ -68,12 +126,16 @@ def predict_challenge(
         flags = run_logic_flags(signals, overlap_ratio, user_label, bool(label))
         suggestions_data = build_suggestions(flags)
         
-        # 4. รวบรวมผลลัพธ์ทั้งหมดเพื่อส่งกลับไปให้ analyze.py
+        # 4. สร้างคำอธิบายโดยรวมเป็นภาษาอังกฤษ
+        ai_reasoning = generate_ai_reasoning(label, probability, clue_words_analysis, fake_indicators, text)
+        
+        # 5. รวบรวมผลลัพธ์ทั้งหมดเพื่อส่งกลับไปให้ analyze.py
         return {
             "predicted_label": label,
             "probability": probability,
             "suggestions": [s.get("text", "") for s in suggestions_data],
-            "clue_words_analysis": clue_words_analysis # ส่งข้อมูลที่ประมวลผลแล้วกลับไป
+            "clue_words_analysis": clue_words_analysis, # ส่งข้อมูลที่ประมวลผลแล้วกลับไป
+            "ai_reasoning": ai_reasoning # เพิ่มคำอธิบายของ AI
         }
 
     except Exception as e:

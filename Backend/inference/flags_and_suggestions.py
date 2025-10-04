@@ -2,18 +2,30 @@
 import re
 from typing import List, Dict, Any, Tuple
 
-SAFE_DOMAIN_HINTS = (
-  "bbc.", "reuters.", "apnews.", "nytimes.", "washingtonpost.", "theguardian.",
-  "bangkokpost.", "thairath.", "matichon.", "mgronline.", "posttoday.", "prachatai."
-)
-CLICKBAIT_WORDS_TH = r"(ด่วน|ช็อก|โคตร|ฟรี|แจกเงิน|วันนี้เท่านั้น|ห้ามพลาด)"
-EMO_PUNCT = r"!!!+|\?\?+"
+# เพิ่มคำที่บ่งบอกถึงข่าวปลอม
+FAKE_NEWS_INDICATORS_TH = r"(ด่วน|ช็อก|โคตร|ฟรี|แจกเงิน|วันนี้เท่านั้น|ห้ามพลาด|ไม่เชื่อ|ต้องดู|สุดยอด|เหลือเชื่อ|น่าตกใจ|ช็อกโลก|โคตรจริง|100%|แน่นอน|ไม่มีทาง|เป็นไปไม่ได้)"
+FAKE_NEWS_INDICATORS_EN = r"(urgent|shocking|amazing|unbelievable|must see|breaking|exclusive|100%|guaranteed|impossible|no way|definitely)"
+
+def detect_fake_news_indicators(text: str) -> List[str]:
+    """ตรวจจับคำที่บ่งบอกถึงข่าวปลอม"""
+    import re
+    indicators = []
+    
+    # ตรวจสอบคำภาษาไทย
+    thai_matches = re.findall(FAKE_NEWS_INDICATORS_TH, text, re.IGNORECASE)
+    indicators.extend(thai_matches)
+    
+    # ตรวจสอบคำภาษาอังกฤษ
+    en_matches = re.findall(FAKE_NEWS_INDICATORS_EN, text, re.IGNORECASE)
+    indicators.extend(en_matches)
+    
+    return list(set(indicators))  # ลบคำซ้ำ
 
 def extract_signals(news_text: str, user_reasoning: str, urls: List[str] | None):
   tokens_news = re.findall(r"\w+|\S", news_text.lower())
   tokens_user = re.findall(r"\w+|\S", (user_reasoning or "").lower())
   has_number_in_news = bool(re.search(r"\b\d{1,3}(?:[.,]\d{3})+|\b\d+%?\b", news_text))
-  has_clickbait = bool(re.search(CLICKBAIT_WORDS_TH, news_text)) or bool(re.search(EMO_PUNCT, news_text))
+  has_clickbait = bool(re.search(FAKE_NEWS_INDICATORS_TH, news_text)) or bool(re.search(r"!!!+|\?\?+", news_text))
   mentions_date_user = bool(re.search(r"\b\d{1,2}/\d{1,2}(/\d{2,4})?|\b\d{4}\b|วันที่|อัปเดต|update", user_reasoning or "", re.IGNORECASE))
   has_source_word = bool(re.search(r"(อ้างอิง|ที่มา|source|อ้างถึง|ประกาศ)", user_reasoning or "", re.IGNORECASE))
   url_list = urls or []

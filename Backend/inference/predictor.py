@@ -108,16 +108,32 @@ class Predictor:
             x_new = np.linspace(0, 1, len(tokens))
             scores = np.interp(x_new, x_orig, scores)
 
-        num_clues = max(3, int(len(tokens) * 0.15))
-        top_indices = np.argsort(scores)[-num_clues:]
-        
+        # ✅ ปรับปรุง: เลือกคำสำคัญจากทุกคำที่มีคะแนนสูง
+        # ไม่จำกัดจำนวนคำ แต่เลือกคำที่มีคะแนนสูงสุด
         clues = []
-        for i in top_indices:
-            if i < len(tokens):
-                clues.append({"token": tokens[i], "score": round(float(scores[i]), 4)})
         
+        # สร้าง list ของ (index, score, token) และเรียงตามคะแนน
+        token_scores = [(i, scores[i], tokens[i]) for i in range(len(tokens))]
+        token_scores.sort(key=lambda x: x[1], reverse=True)  # เรียงตามคะแนนจากสูงไปต่ำ
+        
+        # ✅ กรองคำหยุดที่สั้นมากและไม่มีความหมาย
+        stop_words = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should']
+        
+        # เลือกคำสำคัญไม่เกิน 5 คำ
+        count = 0
+        for i, score, token in token_scores:
+            if count >= 5:  # จำกัดไม่เกิน 5 คำ
+                break
+                
+            if len(token) >= 2 and token.lower() not in stop_words:
+                clues.append({"token": token, "score": round(float(score), 4)})
+                count += 1
+        
+        # เรียงลำดับตามคะแนนจากสูงไปต่ำ
         clues.sort(key=lambda x: x["score"], reverse=True)
-        return clues
+        
+        # ✅ จำกัดให้เหลือไม่เกิน 5 คำสำคัญที่สุด
+        return clues[:5]
 
     def predict(self, text: str) -> Dict[str, Any]:
         if not text.strip():

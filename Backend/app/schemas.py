@@ -67,3 +67,20 @@ class ChallengeFeedback(BaseModel):
     explanation: str = Field(..., description="คำอธิบายที่ถูกต้อง/สรุปผลการวิเคราะห์")
     clue_words_analysis: List[ClueWordAnalysis] = Field([], description="รายการคำสำคัญและการวิเคราะห์เทียบกับเหตุผลผู้ใช้")
     suggestions: List[Dict[str, Any]] = Field([], description="คำแนะนำเพิ่มเติมจาก Logic Flags")
+    ai_reasoning: Optional[str] = Field(None, description="คำอธิบายของ AI ว่าทำไมถึงคิดว่าข้อความนั้นผิดปกติ (ภาษาอังกฤษ)")
+
+class AdminProcessRequest(BaseModel):
+    """Schema สำหรับ Admin processing request"""
+    title: str = Field(..., description="หัวข้อข่าว")
+    text: str = Field(..., description="เนื้อหาข่าว")
+    processOnly: bool = Field(True, description="Flag สำหรับการประมวลผลเท่านั้น ไม่ใช่การส่งคำตอบ")
+    userId: str = Field("admin_processing", description="ID ของผู้ใช้ (สำหรับ Admin processing)")
+
+class AdminProcessResponse(BaseModel):
+    """Schema สำหรับ Admin processing response"""
+    label: int = Field(..., description="ผลการทำนายจากโมเดล (0=fake, 1=real)")
+    clueWords: List[str] = Field([], description="รายการคำสำคัญที่โมเดลใช้ในการตัดสินใจ")
+    clue_words_analysis: List[ClueWordAnalysis] = Field([], description="รายการคำสำคัญและการวิเคราะห์")
+    confidence: float = Field(0.5, description="ความมั่นใจของโมเดล")
+    processedAt: int = Field(..., description="เวลาที่ประมวลผลเสร็จ")
+    ai_reasoning: Optional[str] = Field(None, description="คำอธิบายของ AI ว่าทำไมถึงคิดว่าข้อความนั้นผิดปกติ (ภาษาอังกฤษ)")

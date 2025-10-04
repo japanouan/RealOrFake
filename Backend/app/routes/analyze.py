@@ -6,7 +6,7 @@ from typing import List, Dict, Any, Optional
 from datetime import date, datetime
 
 # === Import Dependencies & Logic ===
-from app.schemas import ChallengeSubmission, AnalyzeOut, ChallengeFeedback, SubmissionIn  # นำเข้า Schema ที่ปรับปรุงแล้ว
+from app.schemas import ChallengeSubmission, AnalyzeOut, ChallengeFeedback, SubmissionIn, AdminProcessRequest, AdminProcessResponse  # นำเข้า Schema ที่ปรับปรุงแล้ว
 from app.services.model import predict_challenge          # Logic การทำนายและ Flagging
 from app.services.db import get_challenge_items_for_today, get_item_by_path, get_firebase_service, get_challenge_item_by_ref, save_submission
 from app.services.firebase_service import FirebaseService
@@ -112,7 +112,8 @@ def analyze_submission(
             "correct": is_correct,
             "explanation": explanation_text,
             "clue_words_analysis": clues_from_model,
-            "suggestions": formatted_suggestions
+            "suggestions": formatted_suggestions,
+            "ai_reasoning": analysis_data.get("ai_reasoning", "")
         }
 
         # 4. เตรียมข้อมูลและบันทึกลง Firebase
@@ -145,10 +146,68 @@ def analyze_submission(
             detail=f"An unexpected error occurred during analysis: {e}"
         )
 
+# ----------------------------------------------------
+# 🟢 2. Admin Processing Endpoint
+# ----------------------------------------------------
+@router.post(
+    "/admin/process",
+    response_model=AdminProcessResponse,
+    tags=["admin"],
+    summary="Process news content for Admin upload (AI analysis only)"
+)
+def admin_process_content(
+    request: AdminProcessRequest
+):
+    """
+    ประมวลผลเนื้อหาข่าวสำหรับ Admin upload โดยใช้ AI model
+    ส่งกลับ label, clueWords, และ clue_words_analysis
+    """
+    print("\n--- ADMIN PROCESSING ---")
+    print(f"Processing: {request.title[:50]}...")
+    
+    try:
+        # วิเคราะห์ด้วยโมเดลโดยไม่ต้องมี user input
+        analysis_data = predict_challenge(
+            text=request.text,
+            user_label=False,  # ไม่มี user input สำหรับ admin processing
+            user_reasoning="",  # ไม่มี user reasoning
+            urls=[]
+        )
+
+        # ดึงผลลัพธ์จากโมเดล
+        predicted_label = analysis_data.get("predicted_label", 0)
+        confidence = analysis_data.get("confidence", 0.5)
+        clue_words_analysis = analysis_data.get("clue_words_analysis", [])
+        
+        # สร้าง clueWords list จาก clue_words_analysis
+        clue_words = []
+        if clue_words_analysis:
+            clue_words = [clue.get("word", "") for clue in clue_words_analysis if clue.get("word")]
+        
+        # สร้าง response
+        response = AdminProcessResponse(
+            label=predicted_label,
+            clueWords=clue_words,
+            clue_words_analysis=clue_words_analysis,
+            confidence=confidence,
+            processedAt=int(datetime.utcnow().timestamp() * 1000),
+            ai_reasoning=analysis_data.get("ai_reasoning", "")
+        )
+        
+        print(f"Processed successfully: label={predicted_label}, clueWords={len(clue_words)}")
+        return response
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error during admin processing: {e}"
+        )
 
         
 # ----------------------------------------------------
-# 🟢 2. Challenges Today Endpoint
+# 🟢 3. Challenges Today Endpoint
 # ----------------------------------------------------
 @router.get("/challenges/today", response_model=List[Dict[str, Any]], tags=["challenges"])
 def get_today_challenges():
