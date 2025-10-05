@@ -8,7 +8,7 @@ router = APIRouter()
 firebase_service = FirebaseService(settings=settings)
 
 @router.get("/daily/today", response_model=Dict)
-def daily_challenge(count: int = 3):
+def daily_challenge(count: int = 5):
     """
     ดึงหรือสร้าง Daily Challenge ของวันนี้
     - count: จำนวน item ที่ต้องการสุ่ม (default=3)
