@@ -11,29 +11,31 @@ export default function Leaderboard() {
   const [updating, setUpdating] = useState(false);
   
   // เรียก Backend เพื่ออัปเดต leaderboard (เขียนข้อมูลลง Firebase)
-  const updateLeaderboard = async () => {
-    if (updating) return;
-    setUpdating(true);
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/leaderboard/update?type=both`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const result = await response.json();
-      if (!response.ok || !result?.success) {
-        throw new Error(result?.message || `HTTP ${response.status}`);
-      }
-      // ไม่ต้องเปลี่ยน state อื่น ๆ เพราะหน้าจอนี้อ่านจาก Firebase อยู่แล้ว
-      console.log('✅ Leaderboard updated');
-    } catch (err) {
-      console.error('❌ Error updating leaderboard:', err);
-      alert('Cannot connect to Backend\nPlease check if server is running on port 8000');
-    } finally {
-      setUpdating(false);
-    }
-  };
-
   
+  useEffect(() => {
+    const updateLeaderboard = async () => {
+      if (updating) return;
+      setUpdating(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/leaderboard/update?type=both`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await response.json();
+        if (!response.ok || !result?.success) {
+          throw new Error(result?.message || `HTTP ${response.status}`);
+        }
+        // ไม่ต้องเปลี่ยน state อื่น ๆ เพราะหน้าจอนี้อ่านจาก Firebase อยู่แล้ว
+        console.log('✅ Leaderboard updated');
+      } catch (err) {
+        console.error('❌ Error updating leaderboard:', err);
+        alert('Cannot connect to Backend\nPlease check if server is running on port 8000');
+      } finally {
+        setUpdating(false);
+      }
+    };
+    updateLeaderboard();
+  }, []);
 
   // ดึงข้อมูลจาก Firebase Realtime Database
   useEffect(() => {
@@ -131,7 +133,7 @@ export default function Leaderboard() {
           
         </div>
 
-        {/* Refresh Button */}
+        {/* Refresh Button
         <div className="flex justify-center mb-6">
           <button
             onClick={updateLeaderboard}
@@ -150,7 +152,7 @@ export default function Leaderboard() {
               <>🔄 Refresh Leaderboard</>
             )}
           </button>
-        </div>
+        </div> */}
 
         {/* Toggle View */}
         <div className="flex justify-center mb-8">
