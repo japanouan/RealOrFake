@@ -20,6 +20,7 @@ import torch.nn as nn
 from core.config import settings
 from app.routes import analyze as analyze_router # Router สำหรับ /analyze
 from app.routes import daily as daily_challenges # Router สำหรับ /challenges/today
+from app.routes import learn as learn # Router สำหรับ /challenges/today
 
 # ----------------------------------------------------
 # 2. MODEL & PREDICTOR INITIALIZATION (Singleton)
@@ -114,4 +115,5 @@ async def health_check():
 # รวม Router เข้ากับ App ทั้งหมด
 app.include_router(analyze_router.router, prefix="/api/v1")
 app.include_router(daily_challenges.router, prefix="/api/v1")
-app.register_blueprint(leaderboard_bp, url_prefix='/api/v1/leaderboard')
+app.include_router(learn.router, prefix="/learn")
+# app.register_blueprint(leaderboard_bp, url_prefix='/api/v1/leaderboard')
