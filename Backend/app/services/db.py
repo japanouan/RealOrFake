@@ -163,11 +163,6 @@ def get_challenge_item_by_ref(
         if 'text' not in item_data and 'content' in item_data:
             item_data['text'] = item_data['content'] # เก็บ content ไว้ที่ text
             
-        # ตรวจสอบ true_label (จำเป็นสำหรับคำนวณ 'correct' ใน model.py)
-        if 'true_label' not in item_data:
-            print(f"Warning: Missing 'true_label' for item {item_id}. Assuming 0.")
-            item_data['true_label'] = 0 
-            
         return item_data
         
     return None

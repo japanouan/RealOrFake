@@ -1,243 +1,171 @@
 # app/routes/analyze.py
-# -*- coding: utf-8 -*-
-from fastapi import APIRouter, HTTPException, Depends, status
-from pydantic import BaseModel 
+from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Dict, Any, Optional
 from datetime import date, datetime
+import re
 
 # === Import Dependencies & Logic ===
-from app.schemas import ChallengeSubmission, AnalyzeOut, ChallengeFeedback, SubmissionIn, AdminProcessRequest, AdminProcessResponse  # นำเข้า Schema ที่ปรับปรุงแล้ว
-from app.services.model import predict_challenge          # Logic การทำนายและ Flagging
-from app.services.db import get_challenge_items_for_today, get_item_by_path, get_firebase_service, get_challenge_item_by_ref, save_submission
+from app.schemas import ChallengeFeedback, SubmissionIn, AdminProcessRequest, AdminProcessResponse
+from app.services.model import predict_challenge # จำเป็นสำหรับ /admin/process
+from app.services.db import get_firebase_service, get_challenge_item_by_ref, save_submission, get_challenge_items_for_today, get_item_by_path
 from app.services.firebase_service import FirebaseService
-from inference.flags_and_suggestions import (
-    extract_signals, run_logic_flags, build_suggestions, compare_reasoning
-)
 
 router = APIRouter()
 
-# ----------------------------------------------------
-# ⚠️ Utility Function 
-# ----------------------------------------------------
-def band_from_proba(p: float, t: float) -> str:
-    """คำนวณ Band ความแตกต่างของคะแนนโมเดลกับค่า Threshold"""
-    d = abs(p - t)
-    if d >= 0.35: return "high"
-    if d >= 0.15: return "medium"
-    return "low"
+# --- Utility Functions ---
+def calculate_text_overlap(reason: str, news: str) -> float:
+    """คำนวณสัดส่วนความเหมือนของคำใน 'reason' เทียบกับ 'news'"""
+    if not reason or not news: return 0.0
+    reason_words = set(re.split(r'\W+', reason.lower())) - {''}
+    news_words = set(re.split(r'\W+', news.lower())) - {''}
+    if not reason_words: return 0.0
+    intersection = reason_words.intersection(news_words)
+    return len(intersection) / len(reason_words)
 
-# ----------------------------------------------------
-# 🟢 1. Analysis Submission Endpoint
-# ----------------------------------------------------
+# ====================================================
+#  1. USER-FACING ENDPOINT: /analyze
+# ====================================================
 @router.post(
     "/analyze",
     response_model=ChallengeFeedback,
     tags=["challenges"],
-    summary="Analyze a user's submission for a daily challenge"
+    summary="Analyze a user's submission using pre-calculated data"
 )
 def analyze_submission(
     submission: SubmissionIn,
     firebase_service: FirebaseService = Depends(get_firebase_service)
 ):
     """
-    รับคำตอบจากผู้ใช้, วิเคราะห์ด้วยโมเดล, บันทึกผล, และส่ง Feedback กลับไป
+    (Logic ใหม่) รับคำตอบจากผู้ใช้, ดึงผลวิเคราะห์ที่เก็บไว้, คำนวณคะแนน, และส่ง Feedback กลับไป
     """
-    print("\n--- ANALYZING SUBMISSION ---")
+    print("\n--- ANALYZING SUBMISSION (PRE-ANALYZED LOGIC) ---")
     print(f"Received submission data: {submission.dict()}")
     
     try:
-        # 1. ดึงข้อมูลข่าวจาก DB
+        # 1. ดึงข้อมูลข่าวและผลวิเคราะห์ที่เก็บไว้ล่วงหน้าจาก DB
         item_data = get_challenge_item_by_ref(firebase_service, submission.itemRef)
-        if not item_data:
-            raise HTTPException(status_code=404, detail=f"Item with ref '{submission.itemRef}' not found.")
-
-        news_text = item_data.get('text')
-        if news_text is None:
-            raise HTTPException(status_code=500, detail=f"Item '{submission.itemRef}' is missing 'text' data.")
-
-        # 2. วิเคราะห์ด้วยโมเดล เพื่อเอาคำตอบของ AI และ Clue ที่ประมวลผลแล้ว
-        analysis_data = predict_challenge(
-            text=news_text,
-            user_label=submission.userLabel,
-            user_reasoning=submission.userReason,
-            urls=[] 
-        )
-
-        # 3. ใช้ผลลัพธ์จากโมเดลเป็น "Source of Truth"
-        model_prediction_bool = bool(analysis_data.get("predicted_label", 0))
-        clues_from_model = analysis_data.get("clue_words_analysis", [])
-
-        # 3.1 คำนวณความถูกต้อง (correct) โดยเทียบคำตอบผู้ใช้กับ "คำตอบของโมเดล"
-        is_correct = (submission.userLabel == model_prediction_bool)
-
-        # ✅ --- START: LOGIC การคำนวณคะแนนใหม่ ---
-        final_score = 0
+        news_text = item_data.get('text') if item_data else None
+        lowercase_clues = [word.lower() for word in submission.userClues]
         
-        # 1. ให้คะแนนพื้นฐาน 25 คะแนน ถ้าทาย Label ถูก
+
+        if not news_text:
+            raise HTTPException(status_code=404, detail=f"Item '{submission.itemRef}' not found or has not been analyzed yet.")
+
+        # 1.2 ดึงข้อมูลต่างๆ จาก `analysis_data` ไม่ใช่ `item_data`
+        model_prediction_bool = bool(item_data.get("label", 0))
+        clues_from_db = item_data.get("clue_words_analysis", [])
+        suggestions_from_db = item_data.get("ai_reasoning")
+
+        # 2. อัปเดต 'found_in_reason' ตามเหตุผลที่ผู้ใช้เพิ่งส่งเข้ามา
+        updated_clues = []
+        # ตรวจสอบให้แน่ใจว่า clues_from_db เป็น list ก่อนวนลูป
+        if isinstance(clues_from_db, list):
+            for clue in clues_from_db:
+                new_clue = clue.copy()
+                new_clue['found_in_reason'] = new_clue.get('word', '').lower() in lowercase_clues if submission.userClues else False
+                updated_clues.append(new_clue)
+
+
+        # 3. คำนวณคะแนน
+        is_correct = (submission.userLabel == model_prediction_bool)
+        final_score = 0
+
         if is_correct:
             final_score = 25
         
-        # 2. คำนวณคะแนน Reasoning จาก 75 คะแนนที่เหลือ
-        if clues_from_model:
+        if updated_clues:
             reasoning_points_pool = 75
-            score_per_clue = reasoning_points_pool / len(clues_from_model)
-            
-            for clue in clues_from_model:
+            score_per_clue = reasoning_points_pool / len(updated_clues)
+            for clue in updated_clues:
                 if clue.get("found_in_reason", False):
-                    if is_correct:
-                        # ถ้า Label ถูก และ Clue ถูก -> ได้คะแนนเต็มส่วน
-                        final_score += score_per_clue
-                    else:
-                        # ถ้า Label ผิด แต่ Clue ถูก -> ยังคงได้คะแนน 1/3 ของส่วนนั้น
-                        final_score += (score_per_clue / 3)
-
-        # 3. ตรวจสอบว่าคะแนนไม่เกิน 100 และปัดเป็นจำนวนเต็ม
-        final_score = min(100, int(final_score))
-
-        # ✅ --- END: LOGIC การคำนวณคะแนนใหม่ ---
-
-        # 3.2 สร้างคำอธิบาย (explanation)
-        if is_correct:
-            explanation_text = f"คุณวิเคราะห์ได้ตรงกับ AI! โมเดลเห็นว่านี่คือ '{'ข่าวจริง' if model_prediction_bool else 'ข่าวปลอม'}'"
-        else:
-            explanation_text = f"มุมมองของคุณต่างจาก AI เล็กน้อย โมเดลวิเคราะห์ว่าเป็น '{'ข่าวจริง' if model_prediction_bool else 'ข่าวปลอม'}'"
+                    final_score += score_per_clue if is_correct else (score_per_clue / 3)
         
-        # 3.3 จัดรูปแบบ suggestions ให้ถูกต้อง
-        suggestions_list = analysis_data.get("suggestions", [])
-        formatted_suggestions = [{"text": s} for s in suggestions_list if isinstance(s, str)]
+        final_score = min(100, int(final_score))
+        
+        # 4. สร้าง Feedback
+        explanation_text = f"คุณวิเคราะห์ได้ตรงกับ AI! โมเดลเห็นว่านี่คือ '{'ข่าวจริง' if model_prediction_bool else 'ข่าวปลอม'}'" if is_correct else f"มุมมองของคุณต่างจาก AI เล็กน้อย โมเดลวิเคราะห์ว่าเป็น '{'ข่าวจริง' if model_prediction_bool else 'ข่าวปลอม'}'"
+        
+        # ตรวจสอบให้แน่ใจว่า suggestions_from_db เป็น list ก่อน
+        formatted_suggestions = []
+        if isinstance(suggestions_from_db, list):
+            formatted_suggestions = [{"text": s.get("text")} for s in suggestions_from_db if isinstance(s, dict) and "text" in s]
 
-        # 3.4 รวบรวม Feedback ทั้งหมด
         final_feedback = {
-            "score": final_score,
-            "correct": is_correct,
-            "explanation": explanation_text,
-            "clue_words_analysis": clues_from_model,
-            "suggestions": formatted_suggestions,
-            "ai_reasoning": analysis_data.get("ai_reasoning", "")
+            "score": final_score, "correct": is_correct, "explanation": explanation_text,
+            "clue_words_analysis": updated_clues, "suggestions": formatted_suggestions
         }
 
-        # 4. เตรียมข้อมูลและบันทึกลง Firebase
+        # 5. บันทึกผลการเล่น
         today_date_key = date.today().strftime('%Y-%m-%d')
-        db_submission_data = {
-            "createdAt": int(datetime.utcnow().timestamp() * 1000),
-            "itemRef": f"items/{submission.itemRef}",
-            "userLabel": submission.userLabel,
-            "userReason": submission.userReason,
-            "score": final_score 
-        }
-        save_submission(
-            firebase_service=firebase_service,
-            user_id=submission.userId,
-            date_key=today_date_key,
-            submission_data=db_submission_data
-        )
+        # db_submission_data = {"createdAt": int(datetime.utcnow().timestamp() * 1000), "itemRef": f"items/{submission.itemRef}", "userLabel": submission.userLabel, "userReason": submission.userReason, "score": final_score}
+        db_submission_data = {"createdAt": int(datetime.utcnow().timestamp() * 1000), "itemRef": f"items/{submission.itemRef}", "userLabel": submission.userLabel, "userClues": ", ".join(submission.userClues), "score": final_score}
+        save_submission(firebase_service=firebase_service, user_id=submission.userId, date_key=today_date_key, submission_data=db_submission_data)
 
-        print("--- ANALYSIS COMPLETE ---")
-        # 5. สร้าง Response กลับไปให้ Frontend
+        print("--- ANALYSIS COMPLETE (using pre-analyzed data) ---")
         return ChallengeFeedback(**final_feedback)
 
-    except HTTPException:
-        raise
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=500,
-            detail=f"An unexpected error occurred during analysis: {e}"
-        )
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
-# ----------------------------------------------------
-# 🟢 2. Admin Processing Endpoint
-# ----------------------------------------------------
+# ====================================================
+#  2. ADMIN ENDPOINT: /admin/process
+# ====================================================
 @router.post(
     "/admin/process",
     response_model=AdminProcessResponse,
     tags=["admin"],
     summary="Process news content for Admin upload (AI analysis only)"
 )
-def admin_process_content(
-    request: AdminProcessRequest
-):
+def admin_process_content(request: AdminProcessRequest):
     """
-    ประมวลผลเนื้อหาข่าวสำหรับ Admin upload โดยใช้ AI model
-    ส่งกลับ label, clueWords, และ clue_words_analysis
+    (Logic เก่า) ประมวลผลเนื้อหาข่าวสำหรับ Admin โดยเรียกใช้ AI model แบบ Real-time
+    เพื่อสร้างผลวิเคราะห์ไปเก็บใน Database
     """
-    print("\n--- ADMIN PROCESSING ---")
-    print(f"Processing: {request.title[:50]}...")
-    
+    print("\n--- ADMIN PROCESSING (REAL-TIME AI) ---")
     try:
-        # วิเคราะห์ด้วยโมเดลโดยไม่ต้องมี user input
         analysis_data = predict_challenge(
-            text=request.text,
-            user_label=False,  # ไม่มี user input สำหรับ admin processing
-            user_reasoning="",  # ไม่มี user reasoning
-            urls=[]
+            text=request.text, user_label=False, user_reasoning="", urls=[]
         )
 
-        # ดึงผลลัพธ์จากโมเดล
-        predicted_label = analysis_data.get("predicted_label", 0)
-        confidence = analysis_data.get("confidence", 0.5)
         clue_words_analysis = analysis_data.get("clue_words_analysis", [])
+        clue_words = [clue.get("word", "") for clue in clue_words_analysis if clue.get("word")]
         
-        # สร้าง clueWords list จาก clue_words_analysis
-        clue_words = []
-        if clue_words_analysis:
-            clue_words = [clue.get("word", "") for clue in clue_words_analysis if clue.get("word")]
+        response = {
+            "predicted_label": analysis_data.get("predicted_label", 0),
+            "clueWords": clue_words,
+            "clue_words_analysis": clue_words_analysis,
+            "confidence": analysis_data.get("probability", 0.5),
+            "processedAt": int(datetime.utcnow().timestamp() * 1000),
+            "suggestions": [{"text": s} for s in analysis_data.get("suggestions", []) if isinstance(s, str)]
+        }
         
-        # สร้าง response
-        response = AdminProcessResponse(
-            label=predicted_label,
-            clueWords=clue_words,
-            clue_words_analysis=clue_words_analysis,
-            confidence=confidence,
-            processedAt=int(datetime.utcnow().timestamp() * 1000),
-            ai_reasoning=analysis_data.get("ai_reasoning", "")
-        )
-        
-        print(f"Processed successfully: label={predicted_label}, clueWords={len(clue_words)}")
-        return response
+        print(f"Processed successfully: label={response['predicted_label']}, clueWords={len(clue_words)}")
+        return AdminProcessResponse(**response)
         
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error during admin processing: {e}"
-        )
+        import traceback; traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error during admin processing: {e}")
 
-        
-# ----------------------------------------------------
-# 🟢 3. Challenges Today Endpoint
-# ----------------------------------------------------
+# ====================================================
+#  3. UTILITY ENDPOINTS
+# ====================================================
 @router.get("/challenges/today", response_model=List[Dict[str, Any]], tags=["challenges"])
 def get_today_challenges():
-    """
-    ดึงรายการโจทย์ทั้งหมดสำหรับวันปัจจุบันจาก Firebase 
-    """
+    """ดึงรายการโจทย์ทั้งหมดสำหรับวันปัจจุบัน"""
     try:
         challenges = get_challenge_items_for_today()
         if not challenges:
             raise HTTPException(status_code=404, detail="No daily challenges found for today.")
-        
         return challenges 
-    
-    except HTTPException:
-        raise
     except Exception as e:
-        print(f"Error fetching daily challenges: {e}")
-        raise HTTPException(status_code=500, detail="Internal error during challenge fetch.")
+        raise HTTPException(status_code=500, detail=f"Internal error during challenge fetch: {e}")
 
-# ----------------------------------------------------
-# 🟢 3. Debug Database Endpoint
-# ----------------------------------------------------
 @router.get("/debug-db/{path:path}", tags=["debug"])
-def debug_db(path: str):
-    """
-    Endpoint สำหรับดึงข้อมูลดิบจาก Firebase ตามพาธที่ระบุ
-    """
-    data = get_item_by_path(path)
-    
+def debug_db(path: str, firebase_service: FirebaseService = Depends(get_firebase_service)):
+    """Endpoint สำหรับดึงข้อมูลดิบจาก Firebase ตาม Path"""
+    data = firebase_service.get_data(path)
     if data is None:
         raise HTTPException(status_code=404, detail=f"Data not found at path: {path}") 
-    
     return data
+

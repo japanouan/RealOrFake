@@ -58,7 +58,7 @@ class SubmissionIn(BaseModel):
     userId: str = Field(..., description="ID ของผู้ใช้ที่ส่งคำตอบ")
     itemRef: str = Field(..., description="ID หรือ Ref ของ Challenge Item")
     userLabel: bool = Field(..., description="คำตอบของผู้ใช้ (True/False)")
-    userReason: str = Field("", description="เหตุผลที่ผู้ใช้ป้อน")
+    userClues: List[str] = Field([], description="รายการ Clue Words ที่ผู้ใช้เลือกจาก Checkbox")
     
 class ChallengeFeedback(BaseModel):
     """Schema Feedback การส่งคำตอบสุดท้าย"""
