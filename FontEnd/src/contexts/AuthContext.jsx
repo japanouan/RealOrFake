@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
   onAuthStateChanged,
   updateProfile
 } from 'firebase/auth';
@@ -23,37 +23,48 @@ export function AuthProvider({ children }) {
 
   // Register new user
   async function register(email, password, username, role = 'user') {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-    // อัปเดต displayName ใน Firebase Auth
-    await updateProfile(userCredential.user, { displayName: username });
+      // อัปเดต displayName ใน Firebase Auth
+      await updateProfile(userCredential.user, { displayName: username });
 
-    // ดึงค่าที่อัปเดตแล้วมาใช้
-    const finalDisplayName = userCredential.user.displayName || username;
+      // ดึงค่าที่อัปเดตแล้วมาใช้
+      const finalDisplayName = userCredential.user.displayName || username;
 
-    // สร้าง user document ใน Realtime Database
-    await set(ref(db, 'users/' + userCredential.user.uid), {
-      uid: userCredential.user.uid,
-      email: email,
-      displayName: finalDisplayName,   // 👈 ใช้ displayName ตาม rules
-      role: role,
-      createdAt: Date.now(),
-      stats: {
-        totalQuestions: 0,
-        correctAnswers: 0,
-        accuracy: 0,
-        streak: 0,
-        badges: []
-      }
-    });
+      // ✅ สร้าง user document ใน Realtime Database
+      await set(ref(db, 'users/' + userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        email: email,
+        displayName: finalDisplayName,
+        role: role,
+        createdAt: Date.now(),
+        stats: {
+          totalQuestions: 0,
+          correctAnswers: 0,
+          accuracy: 0,
+          streak: 0,
+          badges: []
+        }
+      });
 
-    return userCredential;
-  } catch (error) {
-    throw error;
+      // ✅ เพิ่มส่วนสร้าง userAggregate
+      const userAggregateRef = ref(db, 'userAggregates/' + userCredential.user.uid);
+      await set(userAggregateRef, {
+        all: {
+          attempts: 0,
+          correct: 0,
+          totalScore: 0
+        },
+        daily: {},
+        updatedAt: Date.now()
+      });
+
+      return userCredential;
+    } catch (error) {
+      throw error;
+    }
   }
-}
-
 
   // Login user
   async function login(email, password) {
@@ -73,7 +84,7 @@ export function AuthProvider({ children }) {
       if (uid) {
         const statusRef = ref(db, 'users/' + uid + '/status');
         await set(statusRef, { state: 'unactive', lastChanged: serverTimestamp() });
-        try { await onDisconnect(statusRef).cancel(); } catch (_) {}
+        try { await onDisconnect(statusRef).cancel(); } catch (_) { }
       }
       await signOut(auth);
     } catch (error) {
@@ -158,7 +169,7 @@ export function AuthProvider({ children }) {
             '',
             ''
           );
-        } catch (_) {}
+        } catch (_) { }
       };
       window.addEventListener('beforeunload', beforeUnloadHandler);
     }
@@ -170,7 +181,7 @@ export function AuthProvider({ children }) {
           try {
             const role = await Promise.race([
               getUserRole(user.uid),
-              new Promise((_, reject) => 
+              new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Timeout')), 10000)
               )
             ]);
@@ -184,8 +195,8 @@ export function AuthProvider({ children }) {
           setCurrentUser(null);
           setUserRole(null);
           // cleanup presence listeners when signed out
-          try { if (connectedUnsubscribe) connectedUnsubscribe(); } catch (_) {}
-          try { if (beforeUnloadHandler) window.removeEventListener('beforeunload', beforeUnloadHandler); } catch (_) {}
+          try { if (connectedUnsubscribe) connectedUnsubscribe(); } catch (_) { }
+          try { if (beforeUnloadHandler) window.removeEventListener('beforeunload', beforeUnloadHandler); } catch (_) { }
         }
       } catch (error) {
         console.error('Error in auth state change:', error);
@@ -203,8 +214,8 @@ export function AuthProvider({ children }) {
 
     return () => {
       unsubscribe();
-      try { if (connectedUnsubscribe) connectedUnsubscribe(); } catch (_) {}
-      try { if (beforeUnloadHandler) window.removeEventListener('beforeunload', beforeUnloadHandler); } catch (_) {}
+      try { if (connectedUnsubscribe) connectedUnsubscribe(); } catch (_) { }
+      try { if (beforeUnloadHandler) window.removeEventListener('beforeunload', beforeUnloadHandler); } catch (_) { }
       clearTimeout(timeoutId);
     };
   }, []);
