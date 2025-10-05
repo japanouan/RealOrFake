@@ -1,0 +1,187 @@
+{
+  "users": {
+    "demoUser1": {
+      "displayName": "Ada Lovelace",
+      "photoURL": "",
+      "createdAt": 1758735355563,
+      "streak": 7,
+      "longestStreak": 12,
+      "lastPlayedAt": null,
+      "settings": { 
+        "lang": "th", 
+        "notifyDaily": true, 
+        "privacyShare": false 
+      },
+      "stats": { 
+        "attempts": 3, 
+        "correct": 2, 
+        "f1": 0.67, 
+        "avgTimeSec": 15 
+      },
+      "role": "user",
+      "status": {
+        "state": "active",
+        "lastChanged": 1758735355563
+      }
+    }
+  },
+  "items": {
+    "item001": {
+      "title": "การรักษาโรคมะเร็งด้วยวิตามินซี",
+      "text": "มีรายงานว่าการรับประทานวิตามินซีในปริมาณสูงสามารถรักษาโรคมะเร็งได้อย่างมีประสิทธิภาพ โดยไม่ต้องใช้เคมีบำบัด",
+      "domain": "healthnews.com",
+      "label": 0,
+      "source": "LIAR",
+      "publishedAt": null,
+      "difficulty": "easy",
+      "topic": ["health"],
+      "createdAt": 1758735355563,
+      "answer": 0,
+      "meta": null
+    },
+    "item002": {
+      "title": "รัฐบาลประกาศนโยบายใหม่เรื่องการศึกษา",
+      "text": "รัฐบาลได้ประกาศนโยบายการศึกษาฟรีสำหรับเด็กทุกคนในประเทศ โดยจะเริ่มใช้ในปีการศึกษาหน้า",
+      "domain": "government.go.th",
+      "label": 1,
+      "source": "MultiFC",
+      "publishedAt": null,
+      "difficulty": "med",
+      "topic": ["politics"],
+      "createdAt": 1758735355563,
+      "answer": 1,
+      "meta": null
+    },
+    "item003": {
+      "title": "เทคโนโลยี AI จะมาแทนที่มนุษย์",
+      "text": "นักวิทยาศาสตร์คาดการณ์ว่าเทคโนโลยีปัญญาประดิษฐ์จะสามารถทำงานแทนมนุษย์ได้ทุกอย่างภายใน 10 ปีข้างหน้า",
+      "domain": "technews.com",
+      "label": 0,
+      "source": "LIAR",
+      "publishedAt": null,
+      "difficulty": "hard",
+      "topic": ["technology"],
+      "createdAt": 1758735355563,
+      "answer": 0,
+      "meta": null
+    }
+  },
+  "dailyChallenges": {
+    "2025-01-30": {
+      "dateKey": "2025-01-30",
+      "count": 3,
+      "topics": ["health", "politics", "technology"],
+      "createdAt": 1759160000000,
+      "items": {
+        "item001": { 
+          "itemRef": "items/item001", 
+          "order": 1 
+        },
+        "item002": { 
+          "itemRef": "items/item002", 
+          "order": 2 
+        },
+        "item003": { 
+          "itemRef": "items/item003", 
+          "order": 3 
+        }
+      }
+    }
+  },
+  "assignments": {
+    "demoUser1": {
+      "days": {
+        "2025-01-30": {
+          "dateKey": "2025-01-30",
+          "createdAt": 1759160000000,
+          "done": true,
+          "items": {
+            "item001": { 
+              "itemRef": "items/item001", 
+              "order": 1, 
+              "servedAt": 1759160000000 
+            },
+            "item002": { 
+              "itemRef": "items/item002", 
+              "order": 2, 
+              "servedAt": 1759160001000 
+            },
+            "item003": { 
+              "itemRef": "items/item003", 
+              "order": 3, 
+              "servedAt": 1759160002000 
+            }
+          }
+        }
+      }
+    }
+  },
+  "submissions": {
+    "demoUser1": {
+      "sub1": {
+        "dateKey": "2025-01-30",
+        "itemRef": "items/item001",
+        "userLabel": 0,
+        "userReason": "ข่าวนี้ดูไม่น่าเชื่อถือ เพราะการรักษามะเร็งด้วยวิตามินซีเพียงอย่างเดียวไม่น่าจะเป็นไปได้",
+        "durationSec": 25,
+        "createdAt": 1759160000000,
+        "modelLabel": 0,
+        "modelProbTrue": 0.85,
+        "isCorrect": true
+      },
+      "sub2": {
+        "dateKey": "2025-01-30",
+        "itemRef": "items/item002",
+        "userLabel": 1,
+        "userReason": "ข่าวนี้มาจากเว็บไซต์ของรัฐบาล และมีรายละเอียดที่ชัดเจน",
+        "durationSec": 18,
+        "createdAt": 1759160001000,
+        "modelLabel": 1,
+        "modelProbTrue": 0.92,
+        "isCorrect": true
+      },
+      "sub3": {
+        "dateKey": "2025-01-30",
+        "itemRef": "items/item003",
+        "userLabel": 1,
+        "userReason": "เทคโนโลยี AI กำลังพัฒนาอย่างรวดเร็ว และอาจจะมาแทนที่มนุษย์ได้",
+        "durationSec": 32,
+        "createdAt": 1759160002000,
+        "modelLabel": 0,
+        "modelProbTrue": 0.45,
+        "isCorrect": false
+      }
+    }
+  },
+  "userAggregates": {
+    "demoUser1": {
+      "all": { 
+        "attempts": 3, 
+        "correct": 2, 
+        "f1": 0.67 
+      },
+      "daily": { 
+        "2025-01-30": { 
+          "attempts": 3, 
+          "correct": 2, 
+          "f1": 0.67 
+        } 
+      },
+      "weekly": {},
+      "updatedAt": 1759160002000
+    }
+  },
+  "leaderboards": {
+    "daily-2025-01-30": {
+      "top": [ 
+        { 
+          "uid": "demoUser1", 
+          "score": 2, 
+          "f1": 0.67, 
+          "streak": 7 
+        } 
+      ],
+      "updatedAt": 1759160000000
+    }
+  }
+}
