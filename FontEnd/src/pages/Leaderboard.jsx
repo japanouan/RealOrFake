@@ -1,63 +1,69 @@
 import React, { useEffect, useState } from 'react';
-import { getDatabase, ref, onValue } from 'firebase/database';
+import { getDatabase, ref, onValue, get } from 'firebase/database';
 
 export default function Leaderboard() {
   const [users, setUsers] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
-  const [view, setView] = useState("daily"); // "daily" | "all"
+  const [view, setView] = useState("daily");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const db = getDatabase();
-    const aggRef = ref(db, "userAggregates");
-    const usersRef = ref(db, "users");
+    const today = new Date().toISOString().split("T")[0];
+    
+    const path = view === "daily" 
+      ? `leaderboards/daily/${today}`
+      : 'leaderboards/all';
+    
+    const leaderboardRef = ref(db, path);
+    const usersRef = ref(db, 'users');
 
-    const unsubscribeAgg = onValue(aggRef, (snapshot) => {
+    setLoading(true);
+
+    const unsubscribe = onValue(leaderboardRef, async (snapshot) => {
       if (!snapshot.exists()) {
         setUsers([]);
         setTotalUsers(0);
+        setLoading(false);
         return;
       }
 
-      const aggData = snapshot.val();
+      const data = snapshot.val();
+      const topUsers = data.top || {};
 
-      // เอาวันปัจจุบัน (yyyy-mm-dd)
-      const today = new Date().toISOString().split("T")[0];
+      // ดึง users แค่ครั้งเดียว (ไม่ใช้ onValue)
+      try {
+        const usersSnapshot = await get(usersRef);
+        const usersData = usersSnapshot.exists() ? usersSnapshot.val() : {};
 
-      // ไปดึง users เพื่อ map displayName
-      onValue(usersRef, (snapUsers) => {
-        const usersData = snapUsers.exists() ? snapUsers.val() : {};
-
-        const usersArray = Object.entries(aggData).map(([uid, agg]) => {
-          const userProfile = usersData[uid] || {};
-          let stats;
-
-          if (view === "daily") {
-            stats = agg.daily?.[today] || { attempts: 0, correct: 0, totalScore: 0 };
-          } else {
-            stats = agg.all || { attempts: 0, correct: 0, totalScore: 0 };
-          }
+        const usersArray = Object.entries(topUsers).map(([rank, userData]) => {
+          const userProfile = usersData[userData.uid] || {};
+          const displayName = userData.displayName || userProfile.displayName || "ไม่ระบุชื่อ";
 
           return {
-            id: uid,
-            name: userProfile.displayName || "ไม่ระบุชื่อ",
-            attempts: stats.attempts || 0,
-            correct: stats.correct || 0,
-            totalScore: stats.totalScore || 0,
+            id: userData.uid,
+            name: displayName,
+            attempts: userData.attempts || 0,
+            correct: userData.correct || 0,
+            totalScore: userData.totalScore || 0,
+            rank: parseInt(rank) + 1
           };
         });
 
-        // sort ตาม totalScore
-        usersArray.sort((a, b) => b.totalScore - a.totalScore);
+        usersArray.sort((a, b) => a.rank - b.rank);
 
         setUsers(usersArray);
-        setTotalUsers(usersArray.length);
-      });
+        setTotalUsers(data.totalUsers || usersArray.length);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribeAgg();
+    return () => unsubscribe();
   }, [view]);
 
-  // Helper function to get medal icon
   const getMedalIcon = (index) => {
     switch (index) {
       case 0: return "🥇";
@@ -67,7 +73,6 @@ export default function Leaderboard() {
     }
   };
 
-  // Helper function to get rank styling
   const getRankStyling = (index) => {
     switch (index) {
       case 0: return "bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-lg";
@@ -77,7 +82,6 @@ export default function Leaderboard() {
     }
   };
 
-  // Helper function to get accuracy percentage
   const getAccuracy = (attempts, correct) => {
     if (attempts === 0) return 0;
     return Math.round((correct / attempts) * 100);
@@ -95,7 +99,6 @@ export default function Leaderboard() {
             {view === "daily" ? "Daily Challenge Rankings" : "All-Time Champions"}
           </p>
         </div>
-
 
         {/* Toggle View */}
         <div className="flex justify-center mb-8">
@@ -130,7 +133,12 @@ export default function Leaderboard() {
               {view === "daily" ? "Today's Champions" : "Hall of Fame"}
             </h2>
             
-            {users.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <div className="text-gray-500">Loading...</div>
+              </div>
+            ) : users.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📊</div>
                 <div className="text-xl text-gray-500">No data available yet</div>
