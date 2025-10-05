@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
+from rich import _console
 from firebase_admin import db
 from datetime import datetime
 import time
@@ -43,11 +44,12 @@ async def update_leaderboard(type: str = Query("both", description="Type: daily,
                 all_stats = agg.get('all', {})
                 if all_stats.get('totalScore', 0) > 0:
                     user_profile = users.get(uid, {})
-                    display_name = user_profile.get('displayName', 'Unknown User')
+                    username = user_profile.get('username')
+                    display_name = user_profile.get('displayName')
                     
                     all_time.append({
                         'uid': uid,
-                        'displayName': display_name,
+                        'displayName': display_name or username,
                         'totalScore': all_stats.get('totalScore', 0),
                         'correct': all_stats.get('correct', 0),
                         'attempts': all_stats.get('attempts', 0)
@@ -70,11 +72,12 @@ async def update_leaderboard(type: str = Query("both", description="Type: daily,
                 daily_stats = agg.get('daily', {}).get(today, {})
                 if daily_stats.get('totalScore', 0) > 0:
                     user_profile = users.get(uid, {})
-                    display_name = user_profile.get('displayName', 'Unknown User')
+                    display_name = user_profile.get('displayName')
+                    username = user_profile.get('username')
                     
                     daily.append({
                         'uid': uid,
-                        'displayName': display_name,
+                        'displayName': display_name or username,
                         'totalScore': daily_stats.get('totalScore', 0),
                         'correct': daily_stats.get('correct', 0),
                         'attempts': daily_stats.get('attempts', 0)
