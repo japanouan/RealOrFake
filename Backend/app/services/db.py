@@ -2,8 +2,8 @@
 
 import sys
 from pathlib import Path
-from typing import Dict, Any, List, Optional
-from datetime import date
+from typing import Dict, Any, List, Optional, Set
+from datetime import date, datetime, timedelta
 import firebase_admin
 # ⚠️ ลบ 'exceptions' ออก และใช้แค่ credentials, db
 from firebase_admin import credentials, db 
@@ -193,3 +193,40 @@ def save_submission(
     except Exception as e:
         print(f"ERROR: Could not save submission for user '{user_id}'. Reason: {e}")
         return False
+
+def get_current_streak_status(submission_dates: List[str]) -> int:
+    """
+    คำนวณสถานะ Streak ปัจจุบันตามหลักการ UX ที่ดี
+    """
+    if not submission_dates:
+        return 0
+
+    try:
+        dates_set: Set[date] = {datetime.strptime(d, "%Y-%m-%d").date() for d in submission_dates}
+    except ValueError:
+        return 0
+
+    today = date.today()
+    yesterday = today - timedelta(days=1)
+    
+    # กำหนดวันที่เริ่มต้นในการนับถอยหลัง
+    # โดยให้ความสำคัญกับวันนี้ก่อน ถ้าวันนี้ไม่มีค่อยไปดูเมื่อวาน
+    if today in dates_set:
+        start_date = today
+    elif yesterday in dates_set:
+        start_date = yesterday
+    else:
+        # ถ้าทั้งวันนี้และเมื่อวานไม่ได้ทำโจทย์เลย Streak คือ 0
+        return 0
+
+    # เริ่มนับ Streak โดยเริ่มจาก start_date
+    current_streak = 0
+    current_day = start_date
+    while True:
+        if current_day in dates_set:
+            current_streak += 1
+            current_day -= timedelta(days=1)
+        else:
+            break
+            
+    return current_streak

@@ -7,7 +7,7 @@ import re
 # === Import Dependencies & Logic ===
 from app.schemas import ChallengeFeedback, SubmissionIn, AdminProcessRequest, AdminProcessResponse
 from app.services.model import predict_challenge # จำเป็นสำหรับ /admin/process
-from app.services.db import get_firebase_service, get_challenge_item_by_ref, save_submission, get_challenge_items_for_today, get_item_by_path
+from app.services.db import get_firebase_service, get_challenge_item_by_ref, save_submission, get_challenge_items_for_today, get_item_by_path, get_current_streak_status
 from app.services.firebase_service import FirebaseService
 
 router = APIRouter()
@@ -98,8 +98,41 @@ def analyze_submission(
         # 5. บันทึกผลการเล่น
         today_date_key = date.today().strftime('%Y-%m-%d')
         # db_submission_data = {"createdAt": int(datetime.utcnow().timestamp() * 1000), "itemRef": f"items/{submission.itemRef}", "userLabel": submission.userLabel, "userReason": submission.userReason, "score": final_score}
-        db_submission_data = {"createdAt": int(datetime.utcnow().timestamp() * 1000), "itemRef": f"items/{submission.itemRef}", "userLabel": submission.userLabel, "userClues": ", ".join(submission.userClues), "score": final_score}
+        db_submission_data = {"createdAt": int(datetime.utcnow().timestamp() * 1000), "itemRef": f"items/{submission.itemRef}", "userLabel": submission.userLabel, "userClues": ", ".join(submission.userClues), "score": final_score, "is_correct":is_correct}
         save_submission(firebase_service=firebase_service, user_id=submission.userId, date_key=today_date_key, submission_data=db_submission_data)
+
+        # 2. อัปเดต User Aggregates
+        # user_agg_ref = firebase_service.child(f"userAggregates/{submission.userId}")
+        user_agg_all = firebase_service.root_ref.child(f"userAggregates/{submission.userId}/all")
+        user_agg_daily = firebase_service.root_ref.child(f"userAggregates/{submission.userId}/daily/{today_date_key}")
+        user_stats = firebase_service.root_ref.child(f"users/{submission.userId}/stats")
+        current_user_stats = user_stats.get() or { "accuracy": 0, "correctAnswers": 0, "streak": 0, "totalQuestions": 0}
+        current_all_aggregates = user_agg_all.get() or { "attempts": 0, "correct": 0, "totalScore": 0}
+        current_daily_aggregates = user_agg_daily.get() or { "attempts": 0, "correct": 0, "totalScore": 0}
+
+        # อัปเดต User Aggregates ตามคะแนน
+        current_all_aggregates["totalScore"] += final_score
+        current_all_aggregates["attempts"] += 1
+        current_daily_aggregates["totalScore"] += final_score
+        current_daily_aggregates["attempts"] += 1
+        current_user_stats["totalQuestions"] += 1
+
+        if is_correct:
+            current_all_aggregates["correct"] += 1
+            current_daily_aggregates["correct"] += 1
+            current_user_stats["correctAnswers"] += 1
+
+        # อัปเดต streak
+        submission_history_data  = firebase_service.root_ref.child(f"submissions/{submission.userId}").get() 
+        date_keys = submission_history_data.keys() if submission_history_data else []
+        streak = get_current_streak_status(date_keys)
+        current_user_stats["streak"] = streak
+
+        # อัปเดต User Aggregates ลง Firebase
+        user_agg_all.set(current_all_aggregates)
+        user_agg_daily.set(current_daily_aggregates)
+        user_stats.set(current_user_stats)
+
 
         print("--- ANALYSIS COMPLETE (using pre-analyzed data) ---")
         return ChallengeFeedback(**final_feedback)
