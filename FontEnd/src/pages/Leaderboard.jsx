@@ -1,12 +1,47 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { getDatabase, ref, onValue, get } from 'firebase/database';
+
+const API_URL = "http://localhost:5000/api/v1/leaderboard";
 
 export default function Leaderboard() {
   const [users, setUsers] = useState([]);
   const [totalUsers, setTotalUsers] = useState(0);
   const [view, setView] = useState("daily");
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState(null);
+  
+  const hasInitialized = useRef(false);
 
+  // ฟังก์ชันเรียก Backend เพื่ออัปเดต leaderboard
+  const updateLeaderboard = async () => {
+    setUpdating(true);
+    try {
+      const response = await fetch(`${API_URL}/update?type=both`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setLastUpdate(new Date());
+        console.log('✅ Leaderboard updated:', result);
+      } else {
+        console.error('❌ Failed to update:', result);
+        alert('Failed to update leaderboard');
+      }
+    } catch (error) {
+      console.error('❌ Error updating leaderboard:', error);
+      alert('Cannot connect to Backend\nPlease check if server is running on port 5000');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // ดึงข้อมูลจาก Firebase Realtime Database
   useEffect(() => {
     const db = getDatabase();
     const today = new Date().toISOString().split("T")[0];
@@ -31,7 +66,6 @@ export default function Leaderboard() {
       const data = snapshot.val();
       const topUsers = data.top || {};
 
-      // ดึง users แค่ครั้งเดียว (ไม่ใช้ onValue)
       try {
         const usersSnapshot = await get(usersRef);
         const usersData = usersSnapshot.exists() ? usersSnapshot.val() : {};
@@ -63,6 +97,14 @@ export default function Leaderboard() {
 
     return () => unsubscribe();
   }, [view]);
+
+  // เรียก update ครั้งแรกเมื่อโหลดหน้า
+  useEffect(() => {
+    if (!hasInitialized.current) {
+      updateLeaderboard();
+      hasInitialized.current = true;
+    }
+  }, []);
 
   const getMedalIcon = (index) => {
     switch (index) {
@@ -98,6 +140,34 @@ export default function Leaderboard() {
           <p className="text-gray-600 text-lg">
             {view === "daily" ? "Daily Challenge Rankings" : "All-Time Champions"}
           </p>
+          {lastUpdate && (
+            <p className="text-sm text-gray-500 mt-2">
+              Last updated: {lastUpdate.toLocaleTimeString('th-TH')}
+            </p>
+          )}
+        </div>
+
+        {/* Refresh Button */}
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={updateLeaderboard}
+            disabled={updating}
+            className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {updating ? (
+              <>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Updating...
+              </>
+            ) : (
+              <>
+                🔄 Refresh Leaderboard
+              </>
+            )}
+          </button>
         </div>
 
         {/* Toggle View */}
@@ -169,7 +239,7 @@ export default function Leaderboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-gray-800">{user.totalScore}</div>
+                        <div className="text-2xl font-bold text-gray-800">{user.totalScore.toLocaleString()}</div>
                         <div className="text-sm text-gray-600">points</div>
                       </div>
                     </div>
@@ -213,7 +283,7 @@ export default function Leaderboard() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xl font-bold text-gray-800">{user.totalScore}</div>
+                        <div className="text-xl font-bold text-gray-800">{user.totalScore.toLocaleString()}</div>
                         <div className="text-sm text-gray-500">points</div>
                       </div>
                     </div>
@@ -227,6 +297,9 @@ export default function Leaderboard() {
         {/* Footer */}
         <div className="text-center mt-8 text-gray-500">
           <p>Keep playing to climb the leaderboard! 🚀</p>
+          {totalUsers > 0 && (
+            <p className="text-sm mt-2">Total players: {totalUsers}</p>
+          )}
         </div>
       </div>
     </div>

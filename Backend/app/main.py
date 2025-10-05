@@ -114,4 +114,4 @@ async def health_check():
 # รวม Router เข้ากับ App ทั้งหมด
 app.include_router(analyze_router.router, prefix="/api/v1")
 app.include_router(daily_challenges.router, prefix="/api/v1")
-app.register_blueprint(leaderboard_bp, url_prefix='/api/v1/leaderboard')
+app.include_router(leaderboard_bp, prefix='/api/v1/leaderboard')
