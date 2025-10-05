@@ -1,8 +1,33 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BookOpen, Lightbulb, Shield, Search, Target, BarChart3, Feather, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
+
+// --- Configuration ---
+const API_BASE_URL = 'http://127.0.0.1:8000'; 
 
 export default function Learn() {
   const [activeTab, setActiveTab] = useState("tips");
+  const [isLoading, setIsLoading] = useState(false);
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const getChallenge = async () => {
+      setIsLoading(true);
+      try{
+        const response = await fetch(`${API_BASE_URL}/learn/items`)
+        if(!response.ok){
+          throw new Error(`ไม่สามารถดึงข้อมูลโจทย์ได้ (HTTP ${response.status})`);
+        }
+        const data = await response.json();
+        if(!data || data.length === 0) throw new Error("ไม่พบโจทย์สำหรับวันนี้");
+        setData(data);
+      }catch(e){
+        throw new Error(e.message);
+      }finally{
+        setIsLoading(false);
+      }
+    }
+    getChallenge()
+  },[])
 
   const tabs = [
     { id: "tips", label: "เทคนิคการตรวจสอบ", icon: Lightbulb },
@@ -163,52 +188,71 @@ export default function Learn() {
   );
 
   const renderExamples = () => (
-    <div className="space-y-8">
+<div className="space-y-8">
       <div className="text-center mb-12">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">ตัวอย่างจริง</h2>
         <p className="text-lg text-gray-600">เรียนรู้จากการวิเคราะห์ข่าวจริงและปลอม</p>
       </div>
 
       <div className="space-y-8">
-        {examples.map((example, index) => (
-          <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className={`p-6 ${example.isFake ? 'bg-red-50 border-l-4 border-red-500' : 'bg-green-50 border-l-4 border-green-500'}`}>
-              <div className="flex items-center space-x-3 mb-4">
-                {example.isFake ? (
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                ) : (
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                )}
-                <h3 className="text-xl font-bold text-gray-900">{example.title}</h3>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  example.isFake 
-                    ? 'bg-red-100 text-red-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {example.isFake ? 'ข่าวปลอม' : 'ข่าวจริง'}
-                </span>
+        {data.map((example, index) => {
+          // ตรวจสอบว่าเป็นข่าวปลอมหรือไม่โดยดูจากค่า label (0 = ปลอม, 1 = จริง)
+          const isFake = example.label === 0;
+
+          return (
+            <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden">
+              {/* ส่วนหัวข้อและป้ายกำกับ (Header) */}
+              <div className={`p-6 ${isFake ? 'bg-red-50 border-l-4 border-red-500' : 'bg-green-50 border-l-4 border-green-500'}`}>
+                <div className="flex items-center space-x-3 mb-2">
+                  {isFake ? (
+                    <AlertTriangle className="h-6 w-6 text-red-600" />
+                  ) : (
+                    <CheckCircle className="h-6 w-6 text-green-600" />
+                  )}
+                  <h3 className="text-xl font-bold text-gray-900">{example.title}</h3>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    isFake
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-green-100 text-green-800'
+                  }`}>
+                    {isFake ? 'ข่าวปลอม' : 'ข่าวจริง'}
+                  </span>
+                  <span className="text-sm text-gray-500">ที่มา: {example.domain}</span>
+                </div>
+              </div>
+
+              {/* ส่วนเนื้อหาและการวิเคราะห์ */}
+              <div className="p-6">
+                {/* เนื้อหาข่าว */}
+                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                  <p className="text-base leading-relaxed text-gray-800">"{example.text}"</p>
+                </div>
+
+                {/* การวิเคราะห์ของ AI */}
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">🧠 การวิเคราะห์โดย AI:</h4>
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+                    <p className="text-gray-700">{example.ai_reasoning}</p>
+                  </div>
+
+                  <h4 className="text-lg font-semibold text-gray-900 mb-3">🔑 คำสำคัญที่พบ:</h4>
+                   <ul className="space-y-2">
+                    {example.clue_words_analysis.map((clue, clueIndex) => (
+                      <li key={clueIndex} className="flex items-start space-x-3">
+                        <ArrowRight className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-gray-700">
+                          <span className="font-semibold">{clue.word}:</span> {clue.analysis}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
-            
-            <div className="p-6">
-              <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                <p className="text-lg leading-relaxed text-gray-800">"{example.content}"</p>
-              </div>
-              
-              <div>
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">การวิเคราะห์:</h4>
-                <ul className="space-y-3">
-                  {example.analysis.map((point, pointIndex) => (
-                    <li key={pointIndex} className="flex items-start space-x-3">
-                      <ArrowRight className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700">{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
