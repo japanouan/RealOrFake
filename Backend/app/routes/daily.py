@@ -1,7 +1,7 @@
 # app/routes/daily.py
 from fastapi import APIRouter, Query, Depends
 from typing import Dict, List
-from app.services.db import generate_daily_challenge, get_submissions_for_today, get_firebase_service
+from app.services.db import generate_daily_challenge, get_firebase_service
 
 router = APIRouter()
 
