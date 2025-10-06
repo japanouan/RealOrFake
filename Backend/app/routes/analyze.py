@@ -4,6 +4,9 @@ from typing import List, Dict, Any, Optional
 from datetime import date, datetime
 import re
 
+from app.routes.leaderboard import update_leaderboard
+
+
 # === Import Dependencies & Logic ===
 from app.schemas import ChallengeFeedback, SubmissionIn, AdminProcessRequest, AdminProcessResponse
 from app.services.model import predict_challenge # จำเป็นสำหรับ /admin/process
@@ -133,6 +136,8 @@ def analyze_submission(
         user_agg_all.set(current_all_aggregates)
         user_agg_daily.set(current_daily_aggregates)
         user_stats.set(current_user_stats)
+
+        update_leaderboard( type="both")
 
 
         print("--- ANALYSIS COMPLETE (using pre-analyzed data) ---")

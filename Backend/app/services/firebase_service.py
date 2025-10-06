@@ -67,7 +67,7 @@ class FirebaseService:
         # ใช้เวลาปัจจุบันของ Python Server (ms)
         return int(time.time() * 1000)
     
-    def generate_daily_challenge(self, count: int = 3) -> Optional[Dict[str, Any]]:
+    def generate_daily_challenge(self, count: int = 5) -> Optional[Dict[str, Any]]:
         """
         สุ่มสร้าง daily challenge สำหรับวันที่ปัจจุบัน
         โดยจะสุ่ม item จาก /items และบันทึกลง /dailyChallenges/{dateKey}

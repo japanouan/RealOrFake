@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getDatabase, ref, onValue, get } from 'firebase/database';
 
-const API_URL = "http://localhost:5000/api/v1/leaderboard";
+const API_BASE_URL = 'http://127.0.0.1:8000'; 
 
 export default function Leaderboard() {
   const [users, setUsers] = useState([]);
@@ -9,37 +9,33 @@ export default function Leaderboard() {
   const [view, setView] = useState("daily");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState(null);
   
-  const hasInitialized = useRef(false);
-
-  // ฟังก์ชันเรียก Backend เพื่ออัปเดต leaderboard
-  const updateLeaderboard = async () => {
-    setUpdating(true);
-    try {
-      const response = await fetch(`${API_URL}/update?type=both`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+  // เรียก Backend เพื่ออัปเดต leaderboard (เขียนข้อมูลลง Firebase)
+  
+  useEffect(() => {
+    const updateLeaderboard = async () => {
+      if (updating) return;
+      setUpdating(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/leaderboard/update?type=both`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await response.json();
+        if (!response.ok || !result?.success) {
+          throw new Error(result?.message || `HTTP ${response.status}`);
         }
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setLastUpdate(new Date());
-        console.log('✅ Leaderboard updated:', result);
-      } else {
-        console.error('❌ Failed to update:', result);
-        alert('Failed to update leaderboard');
+        // ไม่ต้องเปลี่ยน state อื่น ๆ เพราะหน้าจอนี้อ่านจาก Firebase อยู่แล้ว
+        console.log('✅ Leaderboard updated');
+      } catch (err) {
+        console.error('❌ Error updating leaderboard:', err);
+        alert('Cannot connect to Backend\nPlease check if server is running on port 8000');
+      } finally {
+        setUpdating(false);
       }
-    } catch (error) {
-      console.error('❌ Error updating leaderboard:', error);
-      alert('Cannot connect to Backend\nPlease check if server is running on port 5000');
-    } finally {
-      setUpdating(false);
-    }
-  };
+    };
+    updateLeaderboard();
+  }, []);
 
   // ดึงข้อมูลจาก Firebase Realtime Database
   useEffect(() => {
@@ -98,13 +94,7 @@ export default function Leaderboard() {
     return () => unsubscribe();
   }, [view]);
 
-  // เรียก update ครั้งแรกเมื่อโหลดหน้า
-  useEffect(() => {
-    if (!hasInitialized.current) {
-      updateLeaderboard();
-      hasInitialized.current = true;
-    }
-  }, []);
+  
 
   const getMedalIcon = (index) => {
     switch (index) {
@@ -140,14 +130,10 @@ export default function Leaderboard() {
           <p className="text-gray-600 text-lg">
             {view === "daily" ? "Daily Challenge Rankings" : "All-Time Champions"}
           </p>
-          {lastUpdate && (
-            <p className="text-sm text-gray-500 mt-2">
-              Last updated: {lastUpdate.toLocaleTimeString('th-TH')}
-            </p>
-          )}
+          
         </div>
 
-        {/* Refresh Button */}
+        {/* Refresh Button
         <div className="flex justify-center mb-6">
           <button
             onClick={updateLeaderboard}
@@ -163,12 +149,10 @@ export default function Leaderboard() {
                 Updating...
               </>
             ) : (
-              <>
-                🔄 Refresh Leaderboard
-              </>
+              <>🔄 Refresh Leaderboard</>
             )}
           </button>
-        </div>
+        </div> */}
 
         {/* Toggle View */}
         <div className="flex justify-center mb-8">
@@ -219,7 +203,7 @@ export default function Leaderboard() {
                 {/* Top 3 Podium */}
                 {users.slice(0, 3).map((user, index) => (
                   <div
-                    key={user.id}
+                    key={`${user.id}-${user.rank}`}
                     className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 ${
                       index === 0 ? 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-2 border-yellow-300' :
                       index === 1 ? 'bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300' :
@@ -267,7 +251,7 @@ export default function Leaderboard() {
                 {/* Rest of the rankings */}
                 {users.slice(3).map((user, index) => (
                   <div
-                    key={user.id}
+                    key={`${user.id}-${index + 4}`}
                     className="p-4 bg-white rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-102 border border-gray-100"
                   >
                     <div className="flex items-center justify-between">
