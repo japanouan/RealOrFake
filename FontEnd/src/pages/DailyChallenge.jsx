@@ -294,10 +294,25 @@ function FeedbackView({ feedbackData, originalTitleWords, isLastQuestion, onNext
                     <p className={`text-7xl font-bold ${scoreColor}`}>{calculatedScore}</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                {/* หัวข้อพร้อมไอคอน */}
+                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+                    <Brain className="mr-3 text-purple-500 h-6 w-6" /> {/* ไอคอนสมอง */}
+                    การวิเคราะห์โดย AI
+                </h2>
+
+                {/* กล่องข้อความ AI Reasoning */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-5 ">
+                    <p className="text-gray-700 leading-relaxed">
+                    { feedbackData.ai_reasoning }
+                    </p>
+                </div>
+                </div>
+
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
                         <h2 className="text-xl font-bold text-gray-800 flex items-center"><Target className="mr-3 text-blue-500" />ผลการวิเคราะห์คำสำคัญ</h2>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 max-h-60 overflow-y-auto">
                             {modelClueWordsAnalysis.length > 0 ? (
                                 <ul className="space-y-4">
                                     {modelClueWordsAnalysis.map((clue, index) => {
@@ -336,7 +351,7 @@ function FeedbackView({ feedbackData, originalTitleWords, isLastQuestion, onNext
 
                     <div className="space-y-4">
                         <h2 className="text-xl font-bold text-gray-800 flex items-center"><Brain className="mr-3 text-purple-500" />คำที่คุณเลือก</h2>
-                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 h-full">
+                        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 h-56">
                             {originalUserSelectedWords.length > 0 ? (
                                 <div className="flex flex-wrap gap-2">
                                     {originalUserSelectedWords.map(word => (

@@ -117,4 +117,3 @@ app.include_router(analyze_router.router, prefix="/api/v1")
 app.include_router(daily_challenges.router, prefix="/api/v1")
 app.include_router(leaderboard_router.router, prefix='/api/v1/leaderboard')
 app.include_router(learn.router, prefix="/learn")
-
