@@ -1,19 +1,20 @@
 # app/routes/daily.py
-from fastapi import APIRouter
-from typing import Dict
-from app.services.firebase_service import FirebaseService
-from core.config import settings
+from fastapi import APIRouter, Query, Depends
+from typing import Dict, List
+from app.services.db import generate_daily_challenge, get_firebase_service
 
 router = APIRouter()
-firebase_service = FirebaseService(settings=settings)
 
-@router.get("/daily/today", response_model=Dict)
-def daily_challenge(count: int = 5):
+@router.get("/dailychallenges/today", response_model=Dict)
+def daily_challenge(
+    count: int = 5,
+    firebase_service = Depends(get_firebase_service)
+):
     """
     ดึงหรือสร้าง Daily Challenge ของวันนี้
-    - count: จำนวน item ที่ต้องการสุ่ม (default=3)
     """
-    challenge = firebase_service.generate_daily_challenge(count=count)
+    challenge = generate_daily_challenge(firebase_service, count=count)
     if not challenge:
         return {"error": "Cannot generate daily challenge today."}
     return challenge
+

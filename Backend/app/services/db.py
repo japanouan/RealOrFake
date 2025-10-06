@@ -232,3 +232,63 @@ def get_current_streak_status(submission_dates: List[str]) -> int:
             break
             
     return current_streak
+
+def generate_daily_challenge(
+    firebase_service: FirebaseService,
+    count: int = 5
+) -> dict | None:
+    """
+    สุ่มสร้าง daily challenge สำหรับวันที่ปัจจุบัน
+    - ใช้ firebase_service เป็น argument
+    - count: จำนวน item ที่ต้องการสุ่ม
+    """
+    from datetime import date
+    import random
+
+    today = date.today().strftime("%Y-%m-%d")
+    daily_path = f"dailyChallenges/{today}"
+
+    # ตรวจสอบว่ามี daily challenge วันนี้แล้วหรือยัง
+    existing = firebase_service.get_data(daily_path)
+    if existing:
+        print(f"✅ มี daily challenge ของวันที่ {today} แล้ว — ใช้ของเดิม")
+        return existing
+
+    # ดึงข้อมูล items ทั้งหมด
+    items_data = firebase_service.get_data("items")
+    if not items_data:
+        print("⚠️ ไม่มีข้อมูลใน /items — ไม่สามารถสร้าง daily challenge ได้")
+        return None
+
+    # สุ่ม item
+    item_ids = list(items_data.keys())
+    chosen_ids = random.sample(item_ids, min(count, len(item_ids)))
+
+    # ดึง topic/domain ของแต่ละ item
+    topics = list({items_data[i].get("domain", "unknown") for i in chosen_ids})
+
+    # สร้างข้อมูลสำหรับบันทึก
+    timestamp = firebase_service.get_server_timestamp()
+    daily_data = {
+        "dateKey": today,
+        "count": len(chosen_ids),
+        "topics": topics,
+        "createdAt": timestamp,
+        "items": {
+            item_id: {
+                "itemRef": f"items/{item_id}",
+                "order": idx + 1
+            } for idx, item_id in enumerate(chosen_ids)
+        }
+    }
+
+    # บันทึกลง Firebase
+    success = firebase_service.set_data(daily_path, daily_data)
+    if success:
+        print(f"🎉 สร้าง daily challenge สำเร็จสำหรับวันที่ {today}")
+        return daily_data
+    else:
+        print("❌ เกิดข้อผิดพลาดในการเขียนข้อมูลไปยัง Firebase")
+        return None
+
+
