@@ -19,6 +19,7 @@ import torch.nn as nn
 # Internal imports
 from core.config import settings
 from app.routes import analyze as analyze_router # Router สำหรับ /analyze
+from app.routes import analyzeAdmin as analyze_admin_router
 from app.routes import daily as daily_challenges # Router สำหรับ /challenges/today
 from app.routes import learn as learn # Router สำหรับ /challenges/today
 
@@ -114,6 +115,7 @@ async def health_check():
 
 # รวม Router เข้ากับ App ทั้งหมด
 app.include_router(analyze_router.router, prefix="/api/v1")
+app.include_router(analyze_admin_router.router, prefix="/api/v1")
 app.include_router(daily_challenges.router, prefix="/api/v1")
 app.include_router(leaderboard_router.router, prefix='/api/v1/leaderboard')
 app.include_router(learn.router, prefix="/learn")

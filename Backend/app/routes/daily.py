@@ -49,6 +49,6 @@ def daily_challenge_index(
     """
     today_date_key = date.today().strftime('%Y-%m-%d') 
     submissions = firebase_service.root_ref.child(f"dailyChallenges/{today_date_key}").get() 
-    print(f'Today limit is {submissions['count']}')
-    return submissions['count']
+    print(f'Today limit is {submissions["count"]}')
+    return submissions["count"]
 

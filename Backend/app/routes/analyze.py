@@ -8,8 +8,7 @@ from app.routes.leaderboard import update_leaderboard
 
 
 # === Import Dependencies & Logic ===
-from app.schemas import ChallengeFeedback, SubmissionIn, AdminProcessRequest, AdminProcessResponse
-from app.services.model import predict_challenge # จำเป็นสำหรับ /admin/process
+from app.schemas import ChallengeFeedback, SubmissionIn
 from app.services.db import get_firebase_service, get_challenge_item_by_ref, save_submission, get_challenge_items_for_today, get_item_by_path, get_current_streak_status
 from app.services.firebase_service import FirebaseService
 
@@ -147,44 +146,7 @@ def analyze_submission(
         import traceback; traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
-# ====================================================
-#  2. ADMIN ENDPOINT: /admin/process
-# ====================================================
-@router.post(
-    "/admin/process",
-    response_model=AdminProcessResponse,
-    tags=["admin"],
-    summary="Process news content for Admin upload (AI analysis only)"
-)
-def admin_process_content(request: AdminProcessRequest):
-    """
-    (Logic เก่า) ประมวลผลเนื้อหาข่าวสำหรับ Admin โดยเรียกใช้ AI model แบบ Real-time
-    เพื่อสร้างผลวิเคราะห์ไปเก็บใน Database
-    """
-    print("\n--- ADMIN PROCESSING (REAL-TIME AI) ---")
-    try:
-        analysis_data = predict_challenge(
-            text=request.text, user_label=False, user_reasoning="", urls=[]
-        )
-
-        clue_words_analysis = analysis_data.get("clue_words_analysis", [])
-        clue_words = [clue.get("word", "") for clue in clue_words_analysis if clue.get("word")]
-        
-        response = {
-            "predicted_label": analysis_data.get("predicted_label", 0),
-            "clueWords": clue_words,
-            "clue_words_analysis": clue_words_analysis,
-            "confidence": analysis_data.get("probability", 0.5),
-            "processedAt": int(datetime.utcnow().timestamp() * 1000),
-            "suggestions": [{"text": s} for s in analysis_data.get("suggestions", []) if isinstance(s, str)]
-        }
-        
-        print(f"Processed successfully: label={response['predicted_label']}, clueWords={len(clue_words)}")
-        return AdminProcessResponse(**response)
-        
-    except Exception as e:
-        import traceback; traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error during admin processing: {e}")
+# Admin endpoints moved to analyzeAdmin.py
 
 # ====================================================
 #  3. UTILITY ENDPOINTS

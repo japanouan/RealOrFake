@@ -96,6 +96,15 @@ class Predictor:
             return None, []
             
         indexed = [self.word_to_ix.get(t, self.unk_idx) for t in tokens]
+        # Ensure minimum length to satisfy largest CNN kernel size
+        try:
+            from core.config import settings as _settings
+            min_len = max(_settings.KERNEL_SIZES)
+        except Exception:
+            min_len = 3
+        if len(indexed) < min_len:
+            pad_count = min_len - len(indexed)
+            indexed = indexed + [PAD_IDX] * pad_count
         tensor = torch.LongTensor(indexed).unsqueeze(0).to(DEVICE)
         return tensor, tokens
 
@@ -117,7 +126,21 @@ class Predictor:
         token_scores.sort(key=lambda x: x[1], reverse=True)  # เรียงตามคะแนนจากสูงไปต่ำ
         
         # ✅ กรองคำหยุดที่สั้นมากและไม่มีความหมาย
-        stop_words = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should']
+        stop_words = [
+    'the', 'and', 'or', 'but', 'if', 'while', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+    'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might', 'must', 'can',
+    'this', 'that', 'these', 'those', 'then', 'there', 'here', 'when', 'where', 'why', 'how',
+    'it', 'its', 'i', 'you', 'he', 'she', 'they', 'them', 'we', 'us', 'me', 'my', 'your', 'his', 'her', 'their', 'our',
+    'from', 'as', 'about', 'into', 'up', 'down', 'out', 'over', 'under', 'again', 'further', 'once',
+    'just', 'only', 'too', 'very', 'so', 'than', 'also', 'such', 'both', 'each', 'other', 'any', 'all', 'some', 'no', 'nor', 'not',
+    'because', 'until', 'before', 'after', 'during', 'above', 'below', 'between', 'through', 'off',
+    'own', 'same', 'more', 'most', 'few', 'less', 'many', 'much']
+
+        # เพิ่มคำแบบพิมพ์ใหญ่ทั้งหมดด้วย
+        stop_words += [word.capitalize() for word in stop_words]
+        stop_words += [word.upper() for word in stop_words]
+
         
         # เลือกคำสำคัญไม่เกิน 3 คำ
         count = 0
