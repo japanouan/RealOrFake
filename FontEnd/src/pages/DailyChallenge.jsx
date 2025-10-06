@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from "react-router-dom"; // <-- เพิ่ม useNavigate ที่นี่
 import { Loader2, CheckCircle, XCircle, ArrowRight, Home, Brain, Target, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -21,13 +22,33 @@ const ErrorDisplay = ({ message }) => (
     </div>
 );
 
+// --- NEW Component: โจทย์ครบแล้ว ---
+const CompletedView = ({ onHome }) => (
+    <div className="max-w-xl mx-auto p-8 font-sans animate-fade-in">
+        <div className="bg-white shadow-2xl rounded-2xl p-8 md:p-12 text-center">
+            <CheckCircle className="h-20 w-20 text-green-500 mx-auto mb-6" />
+            <h1 className="text-4xl font-extrabold text-gray-800 mb-4">ยินดีด้วย! 🏆</h1>
+            <p className="text-xl text-gray-600 mb-8">คุณทำภารกิจประจำวันครบทุกข้อแล้ว</p>
+            <button
+                onClick={onHome}
+                className="w-full sm:w-auto mx-auto centered-buttons flex items-center justify-center px-8 py-4 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-300"
+            >
+                <Home className="mr-2 h-5 w-5" />
+                กลับหน้าหลัก
+            </button>
+        </div>
+    </div>
+);
+
 // --- Main Component ---
 export default function DailyChallenge() {
     const { currentUser, loading } = useAuth();
+    const navigate = useNavigate(); // <-- เรียกใช้ useNavigate hook
     const [userId, setUserId] = useState('user_anonymous_12345');
 
     const [challenges, setChallenges] = useState([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+    const [limit, setLimit] = useState(0);
     const [userAnswer, setUserAnswer] = useState({ label: null, selectedWords: [] });
     const [feedback, setFeedback] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -56,7 +77,7 @@ export default function DailyChallenge() {
                     throw new Error(`❌ ไม่สามารถสร้าง Daily Challenge ได้ (HTTP ${generateResponse.status})`);
                 }
                 const generatedData = await generateResponse.json();
-                console.log("%c✅ Daily Challenge generated successfully:", "color: green;", generatedData);
+                console.log("%c✅ Daily Challenge generated successfully:", "color: green;");
 
                 // --- ดึงโจทย์หลังจากสร้างสำเร็จ ---
                 console.log("%c📥 Fetching today's challenges...", "color: blue;");
@@ -66,7 +87,26 @@ export default function DailyChallenge() {
                 }
                 const fetchedData = await fetchResponse.json();
                 if (!fetchedData || fetchedData.length === 0) throw new Error("ไม่พบโจทย์สำหรับวันนี้");
+                // console.log(fetchedData)
                 setChallenges(fetchedData);
+
+                // --- ตั้งค่าค่าเริ่มต้น ---
+                setCurrentQuestionIndex(0);
+                setUserAnswer({ label: null, selectedWords: [] });
+                setFeedback(null);
+                const currentChallenge = await fetch(`${API_BASE_URL}/api/v1/dailychallenges/today/index?user_id=${currentUser.uid}`);
+                if (!currentChallenge.ok) {
+                    throw new Error(`ไม่สามารถดึงข้อมูลโจทย์ได้ (HTTP ${currentChallenge.status})`);
+                }
+                const currentChallengeIndex = await currentChallenge.json();
+                setCurrentQuestionIndex(currentChallengeIndex);
+                const todayLimitRef = await fetch(`${API_BASE_URL}/api/v1/dailychallenges/today/limit`);
+                if (!currentChallenge.ok) {
+                    throw new Error(`ไม่สามารถดึงข้อมูลโจทย์ได้ (HTTP ${currentChallenge.status})`);
+                }
+                const todayLimit = await todayLimitRef.json();
+                setLimit(todayLimit);
+
 
             } catch (err) {
                 console.error("%c🔥 Error:", "color: red;", err);
@@ -125,7 +165,7 @@ export default function DailyChallenge() {
             userClues: userAnswer.selectedWords,
         };
 
-        console.log('Submitting data to backend:', submissionData);
+        // console.log('Submitting data to backend:', submissionData);
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/v1/analyze`, {
@@ -140,7 +180,7 @@ export default function DailyChallenge() {
             }
 
             const feedbackData = await response.json();
-            console.log('Feedback received from backend:', feedbackData);
+            // console.log('Feedback received from backend:', feedbackData);
             setFeedback({ ...feedbackData, submission: submissionData });
         } catch (err) {
             setError(err.message);
@@ -164,6 +204,7 @@ export default function DailyChallenge() {
         setFeedback(null);
         setUserAnswer({ label: null, selectedWords: [] });
         setError(null);
+        navigate('/'); // <--- ใช้ navigate ที่นี่
     };
 
     const isLastQuestion = useMemo(() => currentQuestionIndex === challenges.length - 1, [challenges, currentQuestionIndex]);
@@ -172,7 +213,13 @@ export default function DailyChallenge() {
     if (isLoading) return <LoadingSpinner />;
     if (error && !challenges.length) return <ErrorDisplay message={error} />;
     if (!challenges || challenges.length === 0) return <div className="text-center p-8">ไม่พบโจทย์สำหรับวันนี้</div>;
-    if (feedback) return <FeedbackView feedbackData={feedback} originalTitleWords={challengeWords} isLastQuestion={isLastQuestion} onNext={handleNextQuestion} onHome={handleGoHome} />;
+    
+    // --- เงื่อนไขใหม่: แสดงหน้าทำโจทย์ครบแล้ว ---
+    if (currentQuestionIndex === limit) { 
+        return <CompletedView onHome={() => navigate('/')} />; // <--- แสดง Component ใหม่
+    }
+    
+    if (feedback) return <FeedbackView feedbackData={feedback} originalTitleWords={challengeWords} isLastQuestion={isLastQuestion} onNext={handleNextQuestion} onHome={() => navigate('/')} />;
 
     return (
         <div className="max-w-4xl mx-auto p-4 sm:p-6 md:p-8 font-sans">
@@ -244,6 +291,15 @@ export default function DailyChallenge() {
                             </button>
                             {error && <p className="text-red-500 text-center mt-4">{error}</p>}
                         </div>
+                        {/* Home Button (แบบ Link เพื่อให้สามารถจัด state ได้ก่อน) */}
+                        <button
+                            onClick={handleGoHome} // <--- ใช้ handleGoHome เพื่อรีเซ็ต state และนำทาง
+                            className="w-full flex items-center justify-center border border-gray-300 text-gray-700 font-bold py-3 px-6 rounded-lg hover:bg-gray-100 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-300"
+                        >
+                            <Home className="mr-2 h-5 w-5" />
+                            กลับหน้าหลัก
+                        </button>
+                        {/* ลบ Link ที่ซ้ำซ้อนและไม่ได้ใช้งานออก */}
                     </div>
                 </div>
             </div>
@@ -379,3 +435,5 @@ function FeedbackView({ feedbackData, originalTitleWords, isLastQuestion, onNext
         </div>
     );
 }
+
+// ลบโค้ดซ้ำซ้อนในปุ่ม Home ออกจากส่วน Render หลัก

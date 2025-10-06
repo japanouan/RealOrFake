@@ -89,7 +89,11 @@ def get_challenge_items_for_today() -> List[Dict[str, Any]] | None:
     print(f"DEBUG: Trying to fetch challenge list from path: {challenge_path}")
     
     # 1. ดึงรายการ ID ของโจทย์ประจำวัน
-    challenge_items_map = get_item_by_path(challenge_path) 
+    try:
+        challenge_items_map = db.reference(challenge_path).order_by_child('order').get()
+    except Exception as e:
+        print(f"DEBUG: Fetch failed for path: {challenge_path}. Reason: {e}")
+        return []
     
     if not challenge_items_map:
         print(f"DEBUG: Fetch failed or returned None/empty for path: {challenge_path}")
@@ -183,11 +187,15 @@ def save_submission(
     try:
         # สร้าง Path ไปยัง collection ของ user และ date นั้นๆ
         challenges = firebase_service.root_ref.child(f"submissions/{user_id}/{date_key}").get()
-        if challenges is None:
-            custom_submission_id = 1
-        else:
-            custom_submission_id = len(challenges)+1
-        path = f'submissions/{user_id}/{date_key}/{custom_submission_id}'
+        print(f'this is submissions {challenges}')
+        max_valid_index = 1
+        if challenges:
+            # วนลูปจาก index สูงสุดลงมา เพื่อหา index แรกที่ไม่ใช่ None
+            for i in range(len(challenges)):
+                if challenges[i] is not None:
+                    max_valid_index += 1
+        print(f'this is max_valid_index {max_valid_index}')
+        path = f'submissions/{user_id}/{date_key}/{max_valid_index}'
         
         # ใช้ .push() เพื่อให้ Firebase สร้าง unique key (sub_id) ให้โดยอัตโนมัติ
         submission_ref = firebase_service.root_ref.child(path)
