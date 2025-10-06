@@ -182,11 +182,13 @@ def save_submission(
     """
     try:
         # สร้าง Path ไปยัง collection ของ user และ date นั้นๆ
-        path = f'submissions/{user_id}/{date_key}'
+        challenges = firebase_service.root_ref.child(f"submissions/{user_id}/{date_key}").get()
+        custom_submission_id = len(challenges)
+        path = f'submissions/{user_id}/{date_key}/{custom_submission_id}'
         
         # ใช้ .push() เพื่อให้ Firebase สร้าง unique key (sub_id) ให้โดยอัตโนมัติ
         submission_ref = firebase_service.root_ref.child(path)
-        submission_ref.push(submission_data)
+        submission_ref.set(submission_data)
         
         print(f"Successfully saved submission for user '{user_id}' on '{date_key}'.")
         return True
