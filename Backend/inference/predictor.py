@@ -119,10 +119,10 @@ class Predictor:
         # ✅ กรองคำหยุดที่สั้นมากและไม่มีความหมาย
         stop_words = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should']
         
-        # เลือกคำสำคัญไม่เกิน 5 คำ
+        # เลือกคำสำคัญไม่เกิน 3 คำ
         count = 0
         for i, score, token in token_scores:
-            if count >= 5:  # จำกัดไม่เกิน 5 คำ
+            if count >= 3:  # จำกัดไม่เกิน 3 คำ
                 break
                 
             if len(token) >= 2 and token.lower() not in stop_words:
@@ -132,8 +132,8 @@ class Predictor:
         # เรียงลำดับตามคะแนนจากสูงไปต่ำ
         clues.sort(key=lambda x: x["score"], reverse=True)
         
-        # ✅ จำกัดให้เหลือไม่เกิน 5 คำสำคัญที่สุด
-        return clues[:5]
+        # ✅ จำกัดให้เหลือไม่เกิน 3 คำสำคัญที่สุด
+        return clues[:3]
 
     def predict(self, text: str) -> Dict[str, Any]:
         if not text.strip():
