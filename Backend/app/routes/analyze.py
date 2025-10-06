@@ -92,7 +92,8 @@ def analyze_submission(
 
         final_feedback = {
             "score": final_score, "correct": is_correct, "explanation": explanation_text,
-            "clue_words_analysis": updated_clues, "suggestions": formatted_suggestions
+            "clue_words_analysis": updated_clues, "suggestions": formatted_suggestions,
+            "ai_reasoning": suggestions_from_db
         }
 
         # 5. บันทึกผลการเล่น

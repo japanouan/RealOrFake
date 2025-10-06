@@ -1,7 +1,7 @@
 import os
 import sys
 from pathlib import Path
-from app.routes.leaderboard import leaderboard_bp
+# from app.routes.leaderboard import leaderboard_bp
 
 # ตั้งค่า PYTHONPATH เพื่อให้สามารถ import modules ภายในได้
 # PROJECT_ROOT ควรชี้ไปที่โฟลเดอร์หลักของ Backend (e.g., app/../)
@@ -116,4 +116,4 @@ async def health_check():
 app.include_router(analyze_router.router, prefix="/api/v1")
 app.include_router(daily_challenges.router, prefix="/api/v1")
 app.include_router(learn.router, prefix="/learn")
-app.include_router(leaderboard_bp, prefix='/api/v1/leaderboard')
+# app.include_router(leaderboard_bp, prefix='/api/v1/leaderboard')
