@@ -3,7 +3,7 @@ import { Loader2, CheckCircle, XCircle, ArrowRight, Home, Brain, Target, ShieldC
 import { useAuth } from '../contexts/AuthContext';
 
 // --- Configuration ---
-const API_BASE_URL = 'http://127.0.0.1:8000'; 
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 // --- Helper Components ---
 const LoadingSpinner = () => (
@@ -42,23 +42,43 @@ export default function DailyChallenge() {
     // --- Fetch challenges ---
     useEffect(() => {
         if (!userId) return;
-        const fetchChallenges = async () => {
+
+        const generateAndFetchChallenges = async () => {
             setIsLoading(true);
             setError(null);
+
             try {
-                const response = await fetch(`${API_BASE_URL}/api/v1/challenges/today?userId=${userId}`);
-                if (!response.ok) throw new Error(`ไม่สามารถดึงข้อมูลโจทย์ได้ (HTTP ${response.status})`);
-                const data = await response.json();
-                if (!data || data.length === 0) throw new Error("ไม่พบโจทย์สำหรับวันนี้");
-                setChallenges(data);
+                console.log("%c🚀 Generating today's challenge...", "color: orange;");
+
+                // --- สร้าง Daily Challenge ---
+                const generateResponse = await fetch(`${API_BASE_URL}/api/v1/dailychallenges/today`);
+                if (!generateResponse.ok) {
+                    throw new Error(`❌ ไม่สามารถสร้าง Daily Challenge ได้ (HTTP ${generateResponse.status})`);
+                }
+                const generatedData = await generateResponse.json();
+                console.log("%c✅ Daily Challenge generated successfully:", "color: green;", generatedData);
+
+                // --- ดึงโจทย์หลังจากสร้างสำเร็จ ---
+                console.log("%c📥 Fetching today's challenges...", "color: blue;");
+                const fetchResponse = await fetch(`${API_BASE_URL}/api/v1/challenges/today?userId=${userId}`);
+                if (!fetchResponse.ok) {
+                    throw new Error(`ไม่สามารถดึงข้อมูลโจทย์ได้ (HTTP ${fetchResponse.status})`);
+                }
+                const fetchedData = await fetchResponse.json();
+                if (!fetchedData || fetchedData.length === 0) throw new Error("ไม่พบโจทย์สำหรับวันนี้");
+                setChallenges(fetchedData);
+
             } catch (err) {
+                console.error("%c🔥 Error:", "color: red;", err);
                 setError(err.message);
             } finally {
                 setIsLoading(false);
             }
         };
-        fetchChallenges();
+
+        generateAndFetchChallenges();
     }, [userId]);
+
 
     const currentChallenge = useMemo(() => challenges[currentQuestionIndex], [challenges, currentQuestionIndex]);
 
@@ -159,8 +179,8 @@ export default function DailyChallenge() {
             {/* UI แสดงโจทย์ */}
             <div className="bg-white shadow-lg rounded-2xl overflow-hidden">
                 <div className="w-full bg-gray-200">
-                    <div 
-                        className="bg-blue-500 text-xs font-medium text-blue-100 text-center p-1 leading-none transition-all duration-500" 
+                    <div
+                        className="bg-blue-500 text-xs font-medium text-blue-100 text-center p-1 leading-none transition-all duration-500"
                         style={{ width: `${((currentQuestionIndex + 1) / challenges.length) * 100}%` }}
                     >
                         ข้อที่ {currentQuestionIndex + 1} / {challenges.length}
@@ -284,9 +304,9 @@ function FeedbackView({ feedbackData, originalTitleWords, isLastQuestion, onNext
                                         const originalDisplayWord = originalTitleWords.find(w => w.toLowerCase() === clue.word.toLowerCase()) || clue.word;
                                         return (
                                             <li key={index} className="flex items-start">
-                                                {userSelectedWordsLowerSet.has(clue.word.toLowerCase()) ? 
-                                                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-1 flex-shrink-0" title="คุณเลือกคำนี้ถูกต้อง"/> : 
-                                                    <XCircle className="h-5 w-5 text-gray-400 mr-3 mt-1 flex-shrink-0" title="คุณพลาดคำนี้ไป"/>
+                                                {userSelectedWordsLowerSet.has(clue.word.toLowerCase()) ?
+                                                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-1 flex-shrink-0" title="คุณเลือกคำนี้ถูกต้อง" /> :
+                                                    <XCircle className="h-5 w-5 text-gray-400 mr-3 mt-1 flex-shrink-0" title="คุณพลาดคำนี้ไป" />
                                                 }
                                                 <div>
                                                     <p className="font-semibold text-gray-700">"{originalDisplayWord}"</p>
@@ -297,10 +317,10 @@ function FeedbackView({ feedbackData, originalTitleWords, isLastQuestion, onNext
                                     })}
                                     {incorrectUserWords.length > 0 && (
                                         <>
-                                            <hr className="my-4"/>
+                                            <hr className="my-4" />
                                             {incorrectUserWords.map((word, index) => (
                                                 <li key={`incorrect-${index}`} className="flex items-start">
-                                                    <XCircle className="h-5 w-5 text-red-500 mr-3 mt-1 flex-shrink-0" title="คุณเลือกคำนี้ผิด"/>
+                                                    <XCircle className="h-5 w-5 text-red-500 mr-3 mt-1 flex-shrink-0" title="คุณเลือกคำนี้ผิด" />
                                                     <div>
                                                         <p className="font-semibold text-gray-700 italic">"{word}"</p>
                                                         <p className="text-sm text-gray-500">คำนี้ไม่ใช่คำสำคัญตามการวิเคราะห์ของโมเดล</p>

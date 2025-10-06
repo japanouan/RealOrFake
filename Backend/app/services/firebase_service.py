@@ -66,65 +66,6 @@ class FirebaseService:
         """
         # ใช้เวลาปัจจุบันของ Python Server (ms)
         return int(time.time() * 1000)
-    
-    def generate_daily_challenge(self, count: int = 5) -> Optional[Dict[str, Any]]:
-        """
-        สุ่มสร้าง daily challenge สำหรับวันที่ปัจจุบัน
-        โดยจะสุ่ม item จาก /items และบันทึกลง /dailyChallenges/{dateKey}
-        """
-
-        try:
-            today = datetime.date.today().strftime("%Y-%m-%d")
-            daily_path = f"dailyChallenges/{today}"
-
-            # 🔍 ตรวจสอบว่ามี daily challenge วันนี้แล้วหรือยัง
-            existing = self.get_data(daily_path)
-            if existing:
-                print(f"✅ มี daily challenge ของวันที่ {today} แล้ว — ข้ามการสร้างใหม่")
-                return existing
-
-            # 🔹 ดึงข้อมูล item ทั้งหมด
-            items_data = self.get_data("items")
-            if not items_data:
-                print("⚠️ ไม่มีข้อมูลใน /items — ไม่สามารถสร้าง daily challenge ได้")
-                return None
-
-            # 🔹 สุ่ม item
-            import random
-            item_ids = list(items_data.keys())
-            chosen_ids = random.sample(item_ids, min(count, len(item_ids)))
-
-            # 🔹 ดึง topic/domain ของแต่ละ item
-            topics = list({items_data[i].get("domain", "unknown") for i in chosen_ids})
-
-            # 🔹 สร้างข้อมูลสำหรับบันทึก
-            timestamp = self.get_server_timestamp()
-            daily_data = {
-                "dateKey": today,
-                "count": len(chosen_ids),
-                "topics": topics,
-                "createdAt": timestamp,
-                "items": {
-                    item_id: {
-                        "itemRef": f"items/{item_id}",
-                        "order": idx + 1
-                    }
-                    for idx, item_id in enumerate(chosen_ids)
-                }
-            }
-
-            # 🔹 บันทึกลง Firebase
-            success = self.set_data(daily_path, daily_data)
-            if success:
-                print(f"🎉 สร้าง daily challenge สำเร็จสำหรับวันที่ {today}")
-                return daily_data
-            else:
-                print("❌ เกิดข้อผิดพลาดในการเขียนข้อมูลไปยัง Firebase")
-                return None
-
-        except Exception as e:
-            print(f"🔥 Error while generating daily challenge: {e}")
-            return None
 
 
     # NOTE: อาจเพิ่ม method อื่นๆ เช่น update_data, delete_data ในอนาคต
