@@ -6,7 +6,6 @@ import re
 
 from app.routes.leaderboard import update_leaderboard
 
-
 # === Import Dependencies & Logic ===
 from app.schemas import ChallengeFeedback, SubmissionIn
 from app.services.db import get_firebase_service, get_challenge_item_by_ref, save_submission, get_challenge_items_for_today, get_item_by_path, get_current_streak_status
@@ -131,12 +130,24 @@ def analyze_submission(
         streak = get_current_streak_status(date_keys)
         current_user_stats["streak"] = streak
 
+        # คำนวณ accuracy จาก correctAnswers/totalQuestions
+        try:
+            attempts_for_accuracy = int(current_user_stats.get("totalQuestions", 0))
+            correct_for_accuracy = int(current_user_stats.get("correctAnswers", 0))
+            current_user_stats["accuracy"] = round((correct_for_accuracy / attempts_for_accuracy) * 100, 2) if attempts_for_accuracy > 0 else 0
+        except Exception:
+            current_user_stats["accuracy"] = 0
+
         # อัปเดต User Aggregates ลง Firebase
         user_agg_all.set(current_all_aggregates)
         user_agg_daily.set(current_daily_aggregates)
         user_stats.set(current_user_stats)
 
-        update_leaderboard( type="both")
+        # อัปเดต leaderboard (ไม่รอผลลัพธ์แบบ async ใน path นี้)
+        try:
+            update_leaderboard(type="both")
+        except Exception:
+            pass
 
 
         print("--- ANALYSIS COMPLETE (using pre-analyzed data) ---")

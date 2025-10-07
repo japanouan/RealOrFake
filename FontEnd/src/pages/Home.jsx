@@ -18,13 +18,14 @@ const Home = () => {
   const [userStats, setUserStats] = useState({
     streak: 0,
     accuracy: 0,
-    totalChallenges: 0,
+    totalQuestions: 0,
     lastBadge: "-"
   });
 
   // ----- Global stats ที่จะดึงจาก DB -----
   const [globalStats, setGlobalStats] = useState({
     totalUsers: 0,
+    todayPlayers: 0,
     challengesToday: 0,
     accuracyRate: 0
   });
@@ -60,29 +61,47 @@ const Home = () => {
       }
     });
 
-    // ความแม่นยำเฉลี่ยของระบบ (สมมติบันทึกไว้ที่ userAggregates/accuracyRate)
-    const accRef = ref(db, 'userAggregates/accuracyRate');
-    onValue(accRef, snapshot => {
-      if (snapshot.exists()) {
-        setGlobalStats(prev => ({
-          ...prev,
-          accuracyRate: snapshot.val()
-        }));
-      }
+    // ความแม่นยำเฉลี่ย และจำนวนผู้เล่นวันนี้
+    const allAggRef = ref(db, 'userAggregates');
+    onValue(allAggRef, snapshot => {
+      if (!snapshot.exists()) return;
+      const allAgg = snapshot.val() || {};
+      const todayKey = new Date().toISOString().split('T')[0];
+      let sumCorrect = 0;
+      let sumAttempts = 0;
+      let playersToday = 0;
+      
+      Object.values(allAgg).forEach((agg) => {
+        const daily = (agg && agg.daily && agg.daily[todayKey]) || {};
+        const attempts = Number(daily.attempts || 0);
+        const correct = Number(daily.correct || 0);
+        if (attempts > 0) {
+          sumAttempts += attempts;
+          sumCorrect += correct;
+          playersToday += 1; // นับผู้ที่เล่นวันนี้
+        }
+      });
+      
+      const rate = sumAttempts > 0 ? Math.round((sumCorrect / sumAttempts) * 100) : 0;
+      setGlobalStats(prev => ({ 
+        ...prev, 
+        accuracyRate: rate,
+        todayPlayers: playersToday
+      }));
     });
 
-    // ----- ถ้า login แล้วดึงสถิติของ user -----
+    // ----- ถ้า login แล้วดึงสถิติของ user จากตาราง users/{uid}/stats -----
     if (currentUser) {
-      const userStatRef = ref(db, `userAggregates/${currentUser.uid}`);
+      const userStatRef = ref(db, `users/${currentUser.uid}/stats`);
       onValue(userStatRef, snapshot => {
         if (snapshot.exists()) {
-          const d = snapshot.val();
-          setUserStats({
+          const d = snapshot.val() || {};
+          setUserStats(prev => ({
+            ...prev,
             streak: d.streak || 0,
             accuracy: d.accuracy || 0,
-            totalChallenges: d.totalChallenges || 0,
-            lastBadge: d.lastBadge || "-"
-          });
+            totalQuestions: d.totalQuestions || 0
+          }));
         }
       });
     }
@@ -163,7 +182,7 @@ const Home = () => {
                       <div className="text-sm text-gray-600">ความแม่นยำ</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-purple-600">{userStats.totalChallenges}</div>
+                      <div className="text-2xl font-bold text-purple-600">{userStats.totalQuestions}</div>
                       <div className="text-sm text-gray-600">โจทย์ที่ทำ</div>
                     </div>
                   </div>
@@ -204,7 +223,7 @@ const Home = () => {
                     <div className="bg-blue-50 rounded-xl p-4 text-center">
                       <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
                       <div className="text-2xl font-bold text-blue-600">
-                        {globalStats.totalUsers.toLocaleString()}
+                        {globalStats.todayPlayers.toLocaleString()}
                       </div>
                       <div className="text-sm text-gray-600">ผู้ใช้ทั้งหมด</div>
                     </div>
@@ -218,18 +237,29 @@ const Home = () => {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-6">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-gray-700 font-medium">ความแม่นยำเฉลี่ย</span>
-                      <span className="text-2xl font-bold text-purple-600">
+                  {/* ✅ Progress Bar ความแม่นยำเฉลี่ย */}
+                  <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-gray-700 font-medium flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-green-600" />
+                        ความแม่นยำเฉลี่ย
+                      </span>
+                      <span className="text-3xl font-bold text-green-600">
                         {globalStats.accuracyRate}%
                       </span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
-                      <div 
-                        className="bg-gradient-to-r from-purple-600 to-pink-600 h-3 rounded-full transition-all duration-1000"
-                        style={{width: `${globalStats.accuracyRate}%`}}
-                      ></div>
+                    
+                    {/* Progress Bar */}
+                    <div className="relative">
+                      <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-green-500 rounded-full transition-all duration-700 ease-out relative"
+                          style={{ width: `${globalStats.accuracyRate}%` }}
+                        >
+                          {/* Shine effect */}
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shine"></div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -295,6 +325,17 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {/* CSS Animation */}
+      <style jsx>{`
+        @keyframes shine {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-shine {
+          animation: shine 2s infinite;
+        }
+      `}</style>
     </div>
   );
 };
