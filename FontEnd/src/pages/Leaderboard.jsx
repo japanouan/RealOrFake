@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getDatabase, ref, onValue, get } from 'firebase/database';
 
-const API_BASE_URL = 'http://127.0.0.1:8000'; 
+const API_BASE_URL = 'http://127.0.0.1:8000';
 
 export default function Leaderboard() {
   const [users, setUsers] = useState([]);
@@ -9,9 +9,8 @@ export default function Leaderboard() {
   const [view, setView] = useState("daily");
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  
-  // เรียก Backend เพื่ออัปเดต leaderboard (เขียนข้อมูลลง Firebase)
-  
+
+  // เรียก Backend เพื่ออัปเดต leaderboard
   useEffect(() => {
     const updateLeaderboard = async () => {
       if (updating) return;
@@ -25,7 +24,6 @@ export default function Leaderboard() {
         if (!response.ok || !result?.success) {
           throw new Error(result?.message || `HTTP ${response.status}`);
         }
-        // ไม่ต้องเปลี่ยน state อื่น ๆ เพราะหน้าจอนี้อ่านจาก Firebase อยู่แล้ว
         console.log('✅ Leaderboard updated');
       } catch (err) {
         console.error('❌ Error updating leaderboard:', err);
@@ -37,15 +35,15 @@ export default function Leaderboard() {
     updateLeaderboard();
   }, []);
 
-  // ดึงข้อมูลจาก Firebase Realtime Database
+  // ดึงข้อมูลจาก Firebase
   useEffect(() => {
     const db = getDatabase();
     const today = new Date().toISOString().split("T")[0];
-    
-    const path = view === "daily" 
+
+    const path = view === "daily"
       ? `leaderboards/daily/${today}`
       : 'leaderboards/all';
-    
+
     const leaderboardRef = ref(db, path);
     const usersRef = ref(db, 'users');
 
@@ -94,8 +92,6 @@ export default function Leaderboard() {
     return () => unsubscribe();
   }, [view]);
 
-  
-
   const getMedalIcon = (index) => {
     switch (index) {
       case 0: return "🥇";
@@ -122,7 +118,7 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-50 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        {/* Header Section */}
+        {/* Header */}
         <div className="text-center mb-8 fade-in">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
             🏆 Leaderboard
@@ -130,29 +126,7 @@ export default function Leaderboard() {
           <p className="text-gray-600 text-lg">
             {view === "daily" ? "Daily Challenge Rankings" : "All-Time Champions"}
           </p>
-          
         </div>
-
-        {/* Refresh Button
-        <div className="flex justify-center mb-6">
-          <button
-            onClick={updateLeaderboard}
-            disabled={updating}
-            className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {updating ? (
-              <>
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Updating...
-              </>
-            ) : (
-              <>🔄 Refresh Leaderboard</>
-            )}
-          </button>
-        </div> */}
 
         {/* Toggle View */}
         <div className="flex justify-center mb-8">
@@ -160,8 +134,8 @@ export default function Leaderboard() {
             <button
               onClick={() => setView("daily")}
               className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                view === "daily" 
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105" 
+                view === "daily"
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105"
                   : "text-gray-600 hover:text-blue-600"
               }`}
             >
@@ -170,8 +144,8 @@ export default function Leaderboard() {
             <button
               onClick={() => setView("all")}
               className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
-                view === "all" 
-                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105" 
+                view === "all"
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg transform scale-105"
                   : "text-gray-600 hover:text-blue-600"
               }`}
             >
@@ -180,13 +154,13 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Leaderboard */}
+        {/* Leaderboard Card */}
         <div className="card glass hover:shadow-xl transition-all duration-300 overflow-hidden">
           <div className="p-6">
             <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">
               {view === "daily" ? "Today's Champions" : "Hall of Fame"}
             </h2>
-            
+
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -200,14 +174,16 @@ export default function Leaderboard() {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Top 3 Podium */}
+                {/* Top 3 */}
                 {users.slice(0, 3).map((user, index) => (
                   <div
                     key={`${user.id}-${user.rank}`}
                     className={`p-6 rounded-2xl transition-all duration-300 hover:scale-105 ${
-                      index === 0 ? 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-2 border-yellow-300' :
-                      index === 1 ? 'bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300' :
-                      'bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-300'
+                      index === 0
+                        ? 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-2 border-yellow-300'
+                        : index === 1
+                        ? 'bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300'
+                        : 'bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-300'
                     }`}
                   >
                     <div className="flex items-center justify-between">
@@ -227,28 +203,26 @@ export default function Leaderboard() {
                         <div className="text-sm text-gray-600">points</div>
                       </div>
                     </div>
-                    
+
                     {/* Progress Bar */}
                     <div className="mt-4">
                       <div className="flex justify-between text-sm text-gray-600 mb-1">
                         <span>Progress</span>
                         <span>{user.correct}/{user.attempts}</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full transition-all duration-500 ${
-                            index === 0 ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' :
-                            index === 1 ? 'bg-gradient-to-r from-gray-400 to-gray-600' :
-                            'bg-gradient-to-r from-amber-500 to-amber-700'
-                          }`}
-                          style={{ width: `${getAccuracy(user.attempts, user.correct)}%` }}
-                        ></div>
+                      <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500 rounded-full transition-all duration-700 ease-out relative"
+                          style={{ width: `${user.attempts > 0 ? (user.correct / user.attempts) * 100 : 0}%` }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shine"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
 
-                {/* Rest of the rankings */}
+                {/* Rest */}
                 {users.slice(3).map((user, index) => (
                   <div
                     key={`${user.id}-${index + 4}`}
