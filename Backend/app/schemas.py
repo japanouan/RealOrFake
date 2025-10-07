@@ -59,6 +59,14 @@ class SubmissionIn(BaseModel):
     itemRef: str = Field(..., description="ID หรือ Ref ของ Challenge Item")
     userLabel: bool = Field(..., description="คำตอบของผู้ใช้ (True/False)")
     userClues: List[str] = Field([], description="รายการ Clue Words ที่ผู้ใช้เลือกจาก Checkbox")
+
+# 🔽🔽 เพิ่ม Class ใหม่นี้เข้าไป 🔽🔽
+class SubmissionReasonIn(BaseModel):
+    """Schema ใหม่สำหรับข้อมูลที่ผู้ใช้ส่งเหตุผลเป็นข้อความยาวเข้ามา"""
+    userId: str = Field(..., description="ID ของผู้ใช้ที่ส่งคำตอบ")
+    itemRef: str = Field(..., description="ID หรือ Ref ของ Challenge Item")
+    userLabel: bool = Field(..., description="คำตอบของผู้ใช้ (True/False)")
+    userReason: Optional[str] = Field(None, description="เหตุผลที่ผู้ใช้พิมพ์เป็นข้อความยาว")
     
 class ChallengeFeedback(BaseModel):
     """Schema Feedback การส่งคำตอบสุดท้าย"""
