@@ -22,6 +22,7 @@ from app.routes import analyze as analyze_router # Router สำหรับ /an
 from app.routes import analyzeAdmin as analyze_admin_router
 from app.routes import daily as daily_challenges # Router สำหรับ /challenges/today
 from app.routes import learn as learn # Router สำหรับ /challenges/today
+from app.routes import analyzeWithAi 
 
 # ----------------------------------------------------
 # 2. MODEL & PREDICTOR INITIALIZATION (Singleton)
@@ -119,3 +120,4 @@ app.include_router(analyze_admin_router.router, prefix="/api/v1")
 app.include_router(daily_challenges.router, prefix="/api/v1")
 app.include_router(leaderboard_router.router, prefix='/api/v1/leaderboard')
 app.include_router(learn.router, prefix="/learn")
+app.include_router(analyzeWithAi.router)
