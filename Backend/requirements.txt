@@ -1,12 +1,22 @@
+# FastAPI Framework
 fastapi
 uvicorn[standard]
 pydantic
-# เพิ่ม PyTorch (สำหรับ CPU)
-torch 
-# เพิ่มไลบรารีประมวลผลข้อความที่คุณใช้ (ถ้ามี)
-# เช่น ถ้าใช้ Hugging Face Tokenizer: transformers
-# ถ้าใช้การประมวลผลแบบกำหนดเอง: ให้ติดตั้งตัวช่วยที่จำเป็น
+
+# Machine Learning Libraries
+# ติดตั้ง PyTorch สำหรับ CPU เท่านั้น
+torch
+
+# Database/Backend Services
 firebase-admin
+
+# Scientific Computing
 numpy>=1.24,<2
 scipy>=1.10,<2
-rich
+
+# Utilities
+rich==13.7.1
+
+# หมายเหตุ: ไลบรารีประมวลผลข้อความ
+# หากคุณต้องการใช้ Hugging Face ให้เพิ่ม 'transformers' ที่นี่
+# transformers
