@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: truthcheck-backend
+    env: python
+    plan: free
+    buildCommand: pip install -r Backend/requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHONPATH
+        value: Backend
+      - key: MODEL_PATH
+        value: Backend/ckpt/best_model.pt
+      - key: VOCAB_PATH
+        value: Backend/ckpt/vocab.json
+      - key: THRESHOLD_PATH
+        value: Backend/ckpt/threshold.json
+      - key: FIREBASE_CREDENTIALS
+        value: Backend/app/pattern-3d1a8-firebase-adminsdk-fbsvc-2eb3bbf92d.json
+      - key: FIREBASE_DATABASE_URL
+        value: https://pattern-3d1a8-default-rtdb.asia-southeast1.firebasedatabase.app/
+
