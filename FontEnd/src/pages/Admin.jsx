@@ -256,10 +256,6 @@ export default function Admin() {
           <h2 className="text-3xl font-bold text-gray-900">จัดการผู้ใช้</h2>
           <p className="text-lg text-gray-600">ดูและจัดการผู้ใช้ในระบบ</p>
         </div>
-        <button className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center space-x-2">
-          <Plus className="h-5 w-5" />
-          <span>เพิ่มผู้ใช้</span>
-        </button>
       </div>
 
       <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
