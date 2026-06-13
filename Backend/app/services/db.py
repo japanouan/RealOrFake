@@ -1,6 +1,7 @@
 # app/services/db.py
 
 import sys
+import json
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Set
 from datetime import date, datetime, timedelta
@@ -39,17 +40,20 @@ def initialize_firebase():
     """Initializes Firebase Admin SDK if not already initialized."""
     if not firebase_admin._apps:
         try:
-            # 1. ตรวจสอบ Path ของ Credentials
-            if not Path(settings.FIREBASE_CREDENTIALS).exists():
-                 print(f"ERROR: Firebase credentials file not found at {settings.FIREBASE_CREDENTIALS}")
-                 return
-                 
-            # 2. Initialize
-            cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS)
+            # 1. ตรวจสอบว่ามี FIREBASE_CREDENTIALS_JSON ใน .env หรือไม่
+            if not settings.FIREBASE_CREDENTIALS_JSON:
+                print("ERROR: FIREBASE_CREDENTIALS_JSON is not set in environment variables")
+                return
+
+            # 2. แปลง JSON string จาก .env เป็น dict แล้ว Initialize
+            cred_dict = json.loads(settings.FIREBASE_CREDENTIALS_JSON)
+            cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred, {
                 'databaseURL': settings.FIREBASE_DATABASE_URL
             })
             print("Firebase Admin SDK Initialized Successfully.")
+        except json.JSONDecodeError as e:
+            print(f"ERROR: FIREBASE_CREDENTIALS_JSON is not valid JSON: {e}")
         except Exception as e:
             print(f"Error initializing Firebase Admin SDK: {e}")
 

@@ -12,11 +12,9 @@ class Settings:
     # ------------------------------------
     # ⚠️ 1. FIREBASE SETTINGS (ต้องแทนที่ URL และชื่อไฟล์คีย์)
     # ------------------------------------
-    FIREBASE_CREDENTIALS: str = os.getenv(
-        "FIREBASE_CREDENTIALS", 
-        str(BACKEND_ROOT / "app" / "pattern-3d1a8-firebase-adminsdk-fbsvc-2eb3bbf92d.json")
-    )
-    FIREBASE_DATABASE_URL: str = os.getenv("FIREBASE_DATABASE_URL", "https://pattern-3d1a8-default-rtdb.asia-southeast1.firebasedatabase.app/") 
+    # JSON ของ Service Account ทั้งก้อน เก็บไว้ใน .env (ไม่ใช้ไฟล์ .json บน disk แล้ว)
+    FIREBASE_CREDENTIALS_JSON: str | None = os.getenv("FIREBASE_CREDENTIALS_JSON")
+    FIREBASE_DATABASE_URL: str = os.getenv("FIREBASE_DATABASE_URL")
     
     # ------------------------------------
     # 2. MODEL PATHS
