@@ -1,3 +1,6 @@
 .vite/
 node_modules/
 __pycache__/
+CLAUDE.md
+IMPLEMENTATION_PLAN.md
+*.html
