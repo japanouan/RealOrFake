@@ -9,6 +9,7 @@ torch
 
 # Database/Backend Services
 firebase-admin
+python-dotenv
 
 # Scientific Computing
 numpy>=1.24,<2

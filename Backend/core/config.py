@@ -2,11 +2,15 @@
 import os
 from typing import List
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Path Calculation (Backend/ เป็น Project Root)
 # config.py อยู่ที่ Backend/core/config.py
-BACKEND_ROOT = Path(__file__).resolve().parent.parent 
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
 CKPT_DIR = BACKEND_ROOT / "ckpt"
+
+# โหลดค่าจาก .env (Backend/.env) เข้า os.environ ก่อนอ่านค่า settings
+load_dotenv(BACKEND_ROOT / ".env")
 
 class Settings:
     # ------------------------------------
