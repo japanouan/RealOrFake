@@ -4,19 +4,28 @@ import { getAnalytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import { getFirestore } from "firebase/firestore";
-// Optional: export Firestore if needed elsewhere later
-// import { getFirestore } from "firebase/firestore";
 
-// ✅ ใช้ databaseURL ด้วย (Realtime Database ต้องมี)
+const {
+  VITE_FIREBASE_API_KEY,
+  VITE_FIREBASE_AUTH_DOMAIN,
+  VITE_FIREBASE_DATABASE_URL,
+  VITE_FIREBASE_PROJECT_ID,
+  VITE_FIREBASE_STORAGE_BUCKET,
+  VITE_FIREBASE_MESSAGING_SENDER_ID,
+  VITE_FIREBASE_APP_ID,
+  VITE_FIREBASE_MEASUREMENT_ID
+} = import.meta.env;
+
+// 2. เอาตัวแปรสั้นๆ มาใส่ใน config ได้เลย (โค้ดจะคลีนขึ้นมาก)
 const firebaseConfig = {
-  apiKey: "AIzaSyA_VycM7zniO7ti64Bb-Yn1rfw5SUyDmg8",
-  authDomain: "pattern-3d1a8.firebaseapp.com",
-  databaseURL: "https://pattern-3d1a8-default-rtdb.asia-southeast1.firebasedatabase.app/", // 👈 เพิ่มบรรทัดนี้
-  projectId: "pattern-3d1a8",
-  storageBucket: "pattern-3d1a8.appspot.com", // 👈 ตรงนี้แก้จาก .app เป็น .appspot.com
-  messagingSenderId: "51744145096",
-  appId: "1:51744145096:web:1560f343f029b4a9e2affd",
-  measurementId: "G-BV5J4C9NK9"
+  apiKey: VITE_FIREBASE_API_KEY,
+  authDomain: VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: VITE_FIREBASE_DATABASE_URL,
+  projectId: VITE_FIREBASE_PROJECT_ID,
+  storageBucket: VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: VITE_FIREBASE_APP_ID,
+  measurementId: VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase
