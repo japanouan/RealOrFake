@@ -130,6 +130,7 @@ export default function DailyChallenge() {
             .replace(/’/g, " ’ ") // ใส่ space รอบ ๆ ’
             .replace(/'/g, " ' ") // ใส่ space รอบ ๆ '
             .split(/\s+/)
+            .map(w => w.replace(/^[,.!?"“”‘():;\-–—…*#@%&+=<>\\[\]{}|]+|[,.!?"“”‘():;\-–—…*#@%&+=<>\\[\]{}|]+$/g, "")) // ตัดเครื่องหมายพิเศษหน้า-หลังคำ
             .filter(Boolean);
         return [...new Set(words)];
     }, [currentChallenge]);
