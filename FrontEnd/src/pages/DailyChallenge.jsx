@@ -4,7 +4,7 @@ import { Loader2, CheckCircle, XCircle, ArrowRight, Home, Brain, Target, ShieldC
 import { useAuth } from '../contexts/AuthContext';
 
 // --- Configuration ---
-const API_BASE_URL = 'http://127.0.0.1:8000';
+const API_BASE_URL = import.meta.env.VITE_FIREBASE_API_BASE_URL;
 
 // --- Helper Components ---
 const LoadingSpinner = () => (

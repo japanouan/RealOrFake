@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { BookOpen, Lightbulb, Shield, Search, Target, BarChart3, Feather, AlertTriangle, CheckCircle, ArrowRight } from "lucide-react";
 
 // --- Configuration ---
-const API_BASE_URL = 'http://127.0.0.1:8000'; 
+const API_BASE_URL = import.meta.env.VITE_FIREBASE_API_BASE_URL; 
 
 export default function Learn() {
   const [activeTab, setActiveTab] = useState("tips");

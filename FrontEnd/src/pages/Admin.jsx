@@ -20,6 +20,8 @@ import {
   AlertTriangle
 } from "lucide-react";
 
+const API_BASE_URL = import.meta.env.VITE_FIREBASE_API_BASE_URL;
+
 export default function Admin() {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -581,7 +583,7 @@ function UploadItemsCard() {
   async function authenticateAsAdmin() {
     try {
       // Try to get admin token from backend
-      const response = await fetch('http://127.0.0.1:8000/api/v1/admin/token', {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -605,7 +607,7 @@ function UploadItemsCard() {
   // Function to call AI API for processing
   async function processWithAI(title, text) {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/v1/admin/process', {
+      const response = await fetch(`${API_BASE_URL}/api/v1/admin/process`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
