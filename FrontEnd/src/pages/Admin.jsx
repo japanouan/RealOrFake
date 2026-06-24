@@ -3,8 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { resetUserRole } from "../utils/resetUserRole";
 import { db, auth } from "../firebase";
 import { onValue, ref, set, get } from "firebase/database";
-import { signInWithCustomToken } from "firebase/auth";
-import { 
+import {
   Settings, 
   Users, 
   BarChart3, 
@@ -457,8 +456,6 @@ export default function Admin() {
           {activeTab === "dashboard" && renderDashboard()}
           {activeTab === "users" && renderUsers()}
           {activeTab === "content" && renderContent()}
-          {activeTab === "analytics" && renderAnalytics()}
-          {activeTab === "settings" && renderSettings()}
         </div>
       </div>
     </div>
@@ -579,47 +576,29 @@ function UploadItemsCard() {
     setParsing(false);
   }
 
-  // Function to authenticate as admin for database operations
-  async function authenticateAsAdmin() {
-    try {
-      // Try to get admin token from backend
-      const response = await fetch(`${API_BASE_URL}/api/v1/admin/token`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: currentUser?.email || 'admin@example.com'
-        })
-      });
-      
-      if (response.ok) {
-        const { token } = await response.json();
-        await signInWithCustomToken(auth, token);
-        return true;
-      }
-    } catch (error) {
-      console.warn('Admin authentication failed:', error);
-    }
-    return false;
-  }
-
   // Function to call AI API for processing
   async function processWithAI(title, text) {
     try {
+      const token = await auth.currentUser?.getIdToken();
+      if (!token) {
+        throw new Error('ไม่พบ session การ login กรุณา login ใหม่');
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/v1/admin/process`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           title: title,
-          text: text,
-          processOnly: true,
-          userId: 'admin_processing'
+          text: text
         })
       });
 
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('ไม่มีสิทธิ์ Admin หรือ session หมดอายุ กรุณา login ใหม่');
+      }
       if (!response.ok) {
         throw new Error(`AI API error: ${response.status}`);
       }
@@ -668,13 +647,6 @@ function UploadItemsCard() {
     setParsing(true);
     const errors = [];
     let inserted = 0;
-
-    // Try to authenticate as admin first
-    const isAdmin = await authenticateAsAdmin();
-    if (!isAdmin) {
-      console.warn('Admin authentication failed, trying with current user...');
-      // Continue with current user - might work if rules allow
-    }
 
     try {
       const itemsRef = ref(db, 'items');
