@@ -38,6 +38,7 @@ export default function Admin() {
     const usersRef = ref(db, "users");
     const unsubscribe = onValue(usersRef, (snapshot) => {
       const value = snapshot.val() || {};
+      console.log("[Admin] /users snapshot received:", value);
       // Expect either map keyed by uid or array
       const list = Array.isArray(value)
         ? value.filter(Boolean)
@@ -48,7 +49,10 @@ export default function Admin() {
         return bTime - aTime;
       }));
       setLoadingUsers(false);
-    }, () => setLoadingUsers(false));
+    }, (err) => {
+      console.error("[Admin] /users read failed:", err.code, err.message);
+      setLoadingUsers(false);
+    });
     return () => unsubscribe();
   }, []);
 
