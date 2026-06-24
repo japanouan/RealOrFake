@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { getDatabase, ref, onValue, get } from 'firebase/database';
+import { getDatabase, ref, onValue } from 'firebase/database';
 
 const API_BASE_URL = import.meta.env.VITE_FIREBASE_API_BASE_URL;
 
@@ -45,11 +45,10 @@ export default function Leaderboard() {
       : 'leaderboards/all';
 
     const leaderboardRef = ref(db, path);
-    const usersRef = ref(db, 'users');
 
     setLoading(true);
 
-    const unsubscribe = onValue(leaderboardRef, async (snapshot) => {
+    const unsubscribe = onValue(leaderboardRef, (snapshot) => {
       if (!snapshot.exists()) {
         setUsers([]);
         setTotalUsers(0);
@@ -60,33 +59,23 @@ export default function Leaderboard() {
       const data = snapshot.val();
       const topUsers = data.top || {};
 
-      try {
-        const usersSnapshot = await get(usersRef);
-        const usersData = usersSnapshot.exists() ? usersSnapshot.val() : {};
+      const usersArray = Object.entries(topUsers).map(([rank, userData]) => ({
+        id: userData.uid,
+        name: userData.displayName || "ไม่ระบุชื่อ",
+        attempts: userData.attempts || 0,
+        correct: userData.correct || 0,
+        totalScore: userData.totalScore || 0,
+        rank: parseInt(rank) + 1
+      }));
 
-        const usersArray = Object.entries(topUsers).map(([rank, userData]) => {
-          const userProfile = usersData[userData.uid] || {};
-          const displayName = userData.displayName || userProfile.displayName || "ไม่ระบุชื่อ";
+      usersArray.sort((a, b) => a.rank - b.rank);
 
-          return {
-            id: userData.uid,
-            name: displayName,
-            attempts: userData.attempts || 0,
-            correct: userData.correct || 0,
-            totalScore: userData.totalScore || 0,
-            rank: parseInt(rank) + 1
-          };
-        });
-
-        usersArray.sort((a, b) => a.rank - b.rank);
-
-        setUsers(usersArray);
-        setTotalUsers(data.totalUsers || usersArray.length);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error fetching users:", error);
-        setLoading(false);
-      }
+      setUsers(usersArray);
+      setTotalUsers(data.totalUsers || usersArray.length);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching leaderboard:", error);
+      setLoading(false);
     });
 
     return () => unsubscribe();

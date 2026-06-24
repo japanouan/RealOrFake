@@ -167,7 +167,7 @@ export default function Admin() {
     <div className="space-y-8">
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h2>
-        <p className="text-lg text-gray-600">ภาพรวมการใช้งานระบบ TruthCheck</p>
+        <p className="text-lg text-gray-600">ภาพรวมการใช้งานระบบ RealOrFake</p>
       </div>
 
       {/* Stats Grid */}

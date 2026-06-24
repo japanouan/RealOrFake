@@ -25,9 +25,9 @@ export default function Layout({ children }) {
               <div className="col-span-2">
                 <div className="flex items-center space-x-3 mb-4">
                   <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-xl">
-                    <span className="text-white font-bold">TC</span>
+                    <span className="text-white font-bold">RF</span>
                   </div>
-                  <span className="text-xl font-bold">TruthCheck</span>
+                  <span className="text-xl font-bold">RealOrFake</span>
                 </div>
                 <p className="text-gray-400 mb-4">
                   แพลตฟอร์มฝึกแยกข่าวจริง-ปลอมด้วย AI เพื่อสร้างสังคมที่มีวิจารณญาณ
@@ -55,7 +55,7 @@ export default function Layout({ children }) {
             </div>
 
             <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-              <p>&copy; 2025 TruthCheck. สงวนลิขสิทธิ์.</p>
+              <p>&copy; 2025 RealOrFake. สงวนลิขสิทธิ์.</p>
             </div>
           </div>
         </footer>

@@ -19,7 +19,7 @@ def daily_challenge(
         return {"error": "Cannot generate daily challenge today."}
     return challenge
 
-@router.get("/dailychallenges/today/index/", response_model=int)
+@router.get("/dailychallenges/today/index", response_model=int)
 def daily_challenge_index(
     user_id: str,
     firebase_service = Depends(get_firebase_service),
@@ -40,7 +40,7 @@ def daily_challenge_index(
     print(f'this is max_valid_index {max_valid_index}')
     return max_valid_index
 
-@router.get("/dailychallenges/today/limit/", response_model=int)
+@router.get("/dailychallenges/today/limit", response_model=int)
 def daily_challenge_index(
     firebase_service = Depends(get_firebase_service),
 ):

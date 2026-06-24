@@ -274,7 +274,7 @@ const Home = () => {
       <section className="py-20 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">ทำไมต้องเลือก TruthCheck?</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">ทำไมต้องเลือก RealOrFake?</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
               ด้วยเทคโนโลยี AI ล้ำสมัยและระบบเกมมิฟิเคชัน ให้การเรียนรู้เรื่องข่าวจริง–ปลอมเป็นเรื่องสนุก
             </p>

@@ -6,6 +6,20 @@ import { useAuth } from '../contexts/AuthContext';
 // --- Configuration ---
 const API_BASE_URL = import.meta.env.VITE_FIREBASE_API_BASE_URL;
 
+// Stopword list ต้องตรงกับฝั่ง backend (Backend/inference/predictor.py: stop_words ใน _extract_clues)
+// เพื่อให้ choice ที่ user เลือกได้ ตรงกับคำที่ AI ใช้พิจารณาเป็น clue จริง ๆ
+const STOP_WORDS = new Set([
+    'the', 'and', 'or', 'but', 'if', 'while', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by',
+    'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+    'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might', 'must', 'can',
+    'this', 'that', 'these', 'those', 'then', 'there', 'here', 'when', 'where', 'why', 'how',
+    'it', 'its', 'i', 'you', 'he', 'she', 'they', 'them', 'we', 'us', 'me', 'my', 'your', 'his', 'her', 'their', 'our',
+    'from', 'as', 'about', 'into', 'up', 'down', 'out', 'over', 'under', 'again', 'further', 'once',
+    'just', 'only', 'too', 'very', 'so', 'than', 'also', 'such', 'both', 'each', 'other', 'any', 'all', 'some', 'no', 'nor', 'not',
+    'because', 'until', 'before', 'after', 'during', 'above', 'below', 'between', 'through', 'off',
+    'own', 'same', 'more', 'most', 'few', 'less', 'many', 'much',
+]);
+
 // --- Helper Components ---
 const LoadingSpinner = () => (
     <div className="flex flex-col items-center justify-center h-full min-h-[500px] text-gray-500">
@@ -125,13 +139,11 @@ export default function DailyChallenge() {
     // --- แยกคำสำหรับ checkbox พร้อมแยก ' และ ’ ออก ---
     const challengeWords = useMemo(() => {
         if (!currentChallenge?.title) return [];
-        // แยกคำ, แยก ' และ ’ เป็นคำเดี่ยว
-        const words = currentChallenge.title
-            .replace(/’/g, " ’ ") // ใส่ space รอบ ๆ ’
-            .replace(/'/g, " ' ") // ใส่ space รอบ ๆ '
-            .split(/\s+/)
-            .map(w => w.replace(/^[,.!?"“”‘():;\-–—…*#@%&+=<>\\[\]{}|]+|[,.!?"“”‘():;\-–—…*#@%&+=<>\\[\]{}|]+$/g, "")) // ตัดเครื่องหมายพิเศษหน้า-หลังคำ
-            .filter(Boolean);
+        // ดึงเฉพาะกลุ่มตัวอักษร/ตัวเลขจริง (ไทย/อังกฤษ) ออกมาเป็นคำ ๆ เหมือน tokenizer ฝั่ง AI
+        // เพื่อให้ choice ไม่มีอักษรพิเศษติดมาเลย ไม่ว่าจะอยู่หน้า กลาง หรือหลังคำ
+        const rawWords = currentChallenge.title.match(/[a-zA-Z0-9฀-๿]+/g) || [];
+        // กรองคำสั้นกว่า 2 ตัวอักษร และ stopword ออก ให้ตรงกับเงื่อนไขที่ backend ใช้เลือก clue
+        const words = rawWords.filter(w => w.length >= 2 && !STOP_WORDS.has(w.toLowerCase()));
         return [...new Set(words)];
     }, [currentChallenge]);
 
