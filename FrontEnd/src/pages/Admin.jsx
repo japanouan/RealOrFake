@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { resetUserRole } from "../utils/resetUserRole";
 import { db, auth } from "../firebase";
@@ -86,22 +87,6 @@ export default function Admin() {
       return d.toLocaleDateString();
     } catch {
       return String(value);
-    }
-  };
-
-  // Function to clear all items from Firebase
-  const clearAllItems = async () => {
-    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลทั้งหมดในตาราง items? การกระทำนี้ไม่สามารถย้อนกลับได้!')) {
-      return;
-    }
-
-    try {
-      const itemsRef = ref(db, 'items');
-      await set(itemsRef, null); // Set to null to delete all data
-      alert('ลบข้อมูลทั้งหมดเรียบร้อยแล้ว!');
-    } catch (error) {
-      console.error('Error clearing items:', error);
-      alert('เกิดข้อผิดพลาดในการลบข้อมูล: ' + error.message);
     }
   };
 
@@ -342,20 +327,20 @@ export default function Admin() {
           <p className="text-lg text-gray-600">เพิ่มและจัดการข้อสอบ Daily Challenge</p>
         </div>
         <div className="flex space-x-3">
-          <button 
+          <button
             onClick={createItemsTable}
             className="bg-green-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-700 transition-colors flex items-center space-x-2"
           >
             <Plus className="h-5 w-5" />
             <span>สร้างตาราง items</span>
           </button>
-          <button 
-            onClick={clearAllItems}
-            className="bg-red-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-red-700 transition-colors flex items-center space-x-2"
+          <Link
+            to="/admin/items"
+            className="bg-gray-700 text-white px-6 py-3 rounded-xl font-medium hover:bg-gray-800 transition-colors flex items-center space-x-2"
           >
-            <Trash2 className="h-5 w-5" />
-            <span>ลบข้อมูลทั้งหมด</span>
-          </button>
+            <Eye className="h-5 w-5" />
+            <span>ดู/จัดการรายการข่าวทั้งหมด</span>
+          </Link>
         </div>
       </div>
 
@@ -466,12 +451,49 @@ export default function Admin() {
   );
 }
 
+// ---- ตัวอย่างรูปแบบไฟล์ที่ต้องการ ----
+const SAMPLE_ROWS = [
+  { title: 'นายกฯ เปิดงานประชุมนานาชาติด้านเทคโนโลยี AI ที่กรุงเทพฯ', text: 'เมื่อวันที่ 1 มิถุนายน นายกรัฐมนตรีเป็นประธานเปิดงานประชุมนานาชาติด้านเทคโนโลยี AI ซึ่งมีผู้เข้าร่วมจากกว่า 30 ประเทศ...', domain: 'thaipbs.or.th' },
+  { title: 'พบสูตรลับลดน้ำหนัก 10 กิโลใน 3 วัน แพทย์เตือนอย่าหลงเชื่อ', text: 'มีการแชร์ข้อความอ้างว่าสูตรอาหารชนิดหนึ่งช่วยลดน้ำหนักได้เร็วผิดปกติภายใน 3 วัน แพทย์ผู้เชี่ยวชาญยืนยันว่าไม่มีหลักฐานทางการแพทย์รองรับ...', domain: 'antifakenewscenter.com' },
+];
+
+// ตรวจสอบความถูกต้องของแต่ละแถว พร้อมเหตุผลแบบละเอียด (ใช้ทั้งตอน preview และตอน stage จริง)
+function validateRow(row) {
+  const reasons = [];
+  if (!row || typeof row !== 'object') {
+    return { ok: false, reasons: ['แถวข้อมูลว่างหรือไม่ถูกต้อง'] };
+  }
+  const title = row.title !== undefined && row.title !== null ? String(row.title).trim() : '';
+  const text = row.text !== undefined && row.text !== null ? String(row.text).trim() : '';
+
+  if (!title) reasons.push("ไม่มีคอลัมน์ 'title' หรือเป็นค่าว่าง");
+  else if (title.length < 5) reasons.push("'title' สั้นเกินไป (ต้องอย่างน้อย 5 ตัวอักษร)");
+
+  if (!text) reasons.push("ไม่มีคอลัมน์ 'text' หรือเป็นค่าว่าง");
+  else if (text.length < 20) reasons.push("'text' สั้นเกินไป (ต้องอย่างน้อย 20 ตัวอักษร)");
+
+  return { ok: reasons.length === 0, reasons };
+}
+
 // ---- Components ----
 function UploadItemsCard() {
   const [parsing, setParsing] = useState(false);
   const [result, setResult] = useState({ inserted: 0, errors: [] });
   const [xlsxModule, setXlsxModule] = useState(null);
   const [parsedRows, setParsedRows] = useState([]);
+  const [previewRows, setPreviewRows] = useState([]);
+  const [totalRowCount, setTotalRowCount] = useState(0);
+  const [detectedColumns, setDetectedColumns] = useState([]);
+  const fileInputRef = useRef(null);
+
+  function clearFile() {
+    setParsedRows([]);
+    setPreviewRows([]);
+    setTotalRowCount(0);
+    setDetectedColumns([]);
+    setResult({ inserted: 0, errors: [] });
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
 
   function readFileAsText(file) {
     return new Promise((resolve, reject) => {
@@ -494,17 +516,11 @@ function UploadItemsCard() {
     });
   }
 
-  function validateItemShape(item) {
-    // Required fields for items in RTDB - only title and text
-    const required = ['title', 'text'];
-    const missing = required.filter(k => !item || item[k] === undefined || item[k] === null || String(item[k]).trim() === '');
-    if (missing.length > 0) {
-      return { ok: false, message: `ข้อมูลไม่ครบ: ขาด ${missing.join(', ')}` };
-    }
+  function normalizeRow(item) {
     // Basic normalization - AI will add label and clueWords later
-    const normalized = {
-      title: String(item.title),
-      text: String(item.text),
+    return {
+      title: String(item.title).trim(),
+      text: String(item.text).trim(),
       domain: item.domain || 'ไม่ระบุแหล่งที่มา',
       label: 0, // Default to 0, will be updated by AI
       // Optional fields that rules allow
@@ -513,7 +529,6 @@ function UploadItemsCard() {
       topic: null,
       createdAt: Date.now()
     };
-    return { ok: true, value: normalized };
   }
 
   async function handleFiles(files) {
@@ -563,18 +578,25 @@ function UploadItemsCard() {
       return;
     }
 
-    // Only validate and stage rows; do not push yet
+    // ตรวจสอบทุกแถว + เตรียม preview (10 แถวแรก) ให้เห็นว่าไฟล์ตรง format ไหมก่อนอัปโหลดจริง
     const staged = [];
+    const preview = [];
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i];
-      const v = validateItemShape(row);
-      if (!v.ok) {
-        errors.push(`แถวที่ ${i + 1}: ${v.message}`);
+      const validation = validateRow(row);
+      if (i < 10) {
+        preview.push({ index: i + 1, row, validation });
+      }
+      if (!validation.ok) {
+        errors.push(`แถวที่ ${i + 1}: ${validation.reasons.join(', ')}`);
         continue;
       }
-      staged.push(v.value);
+      staged.push(normalizeRow(row));
     }
 
+    setTotalRowCount(rows.length);
+    setPreviewRows(preview);
+    setDetectedColumns(rows.length > 0 ? Object.keys(rows[0]) : []);
     setParsedRows(staged);
     setResult({ inserted: 0, errors });
     setParsing(false);
@@ -647,7 +669,7 @@ function UploadItemsCard() {
   }
 
   async function pushToDatabase() {
-    if (parsing || parsedRows.length === 0) return;
+    if (parsing || parsedRows.length === 0 || result.errors.length > 0) return;
     setParsing(true);
     const errors = [];
     let inserted = 0;
@@ -729,7 +751,12 @@ function UploadItemsCard() {
 
     setResult({ inserted, errors });
     setParsing(false);
-    if (inserted > 0) setParsedRows([]);
+    if (inserted > 0) {
+      setParsedRows([]);
+      setPreviewRows([]);
+      setTotalRowCount(0);
+      setDetectedColumns([]);
+    }
   }
 
   return (
@@ -739,8 +766,60 @@ function UploadItemsCard() {
         รองรับไฟล์ .json, .csv, .tsv, .xls, .xlsx (ต้องมีคอลัมน์ title และ text เท่านั้น)<br/>
         ระบบจะใช้ AI ประมวลผลเพื่อสร้าง label (0/1) และ clueWords อัตโนมัติ
       </p>
+
+      {/* ตัวอย่างรูปแบบไฟล์ที่ต้องการ - เทาจางๆเฉพาะข้อมูลตัวอย่าง ส่วนชื่อคอลัมน์แสดงปกติ */}
+      {detectedColumns.length === 0 ? (
+        <div className="mb-6">
+          <h4 className="text-sm font-semibold text-gray-800 mb-2">รูปแบบไฟล์ที่ต้องการ (ตัวอย่าง)</h4>
+          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium text-gray-700">title <span className="text-red-500">*จำเป็น</span></th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-700">text <span className="text-red-500">*จำเป็น</span></th>
+                  <th className="px-4 py-2 text-left font-medium text-gray-700">domain <span className="text-gray-400">(ไม่บังคับ)</span></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {SAMPLE_ROWS.map((r, i) => (
+                  <tr key={i}>
+                    <td className="px-4 py-2 text-gray-400 align-top">{r.title}</td>
+                    <td className="px-4 py-2 text-gray-400 align-top">{r.text}</td>
+                    <td className="px-4 py-2 text-gray-400 align-top">{r.domain}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            เงื่อนไข: <code>title</code> ต้องยาวอย่างน้อย 5 ตัวอักษร, <code>text</code> ต้องยาวอย่างน้อย 20 ตัวอักษร
+            ไม่ต้องใส่ <code>label</code>/<code>clueWords</code> มาเอง เพราะระบบ AI จะวิเคราะห์และเติมให้อัตโนมัติหลังอัปโหลด
+          </p>
+        </div>
+      ) : (
+        <div className="mb-6">
+          <h4 className="text-sm font-semibold text-gray-800 mb-2">คอลัมน์ที่พบในไฟล์</h4>
+          <div className="flex flex-wrap gap-2">
+            {detectedColumns.map((col) => {
+              const isRequired = col === 'title' || col === 'text';
+              return (
+                <span
+                  key={col}
+                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    isRequired ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {col}{isRequired ? ' *จำเป็น' : ''}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center space-x-4">
         <input
+          ref={fileInputRef}
           type="file"
           accept=".json,.csv,.tsv,.xls,.xlsx"
           onChange={(e) => handleFiles(e.target.files)}
@@ -750,15 +829,25 @@ function UploadItemsCard() {
         <button
           type="button"
           onClick={pushToDatabase}
-          disabled={parsing || parsedRows.length === 0}
+          disabled={parsing || parsedRows.length === 0 || result.errors.length > 0}
           className={`px-4 py-2 rounded-md font-medium ${
-            parsedRows.length === 0 || parsing
+            parsedRows.length === 0 || parsing || result.errors.length > 0
               ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
               : 'bg-blue-600 text-white hover:bg-blue-700'
           }`}
         >
           {parsing ? 'กำลังประมวลผลด้วย AI...' : 'อัปโหลดและประมวลผลด้วย AI'}
         </button>
+        {detectedColumns.length > 0 && (
+          <button
+            type="button"
+            onClick={clearFile}
+            disabled={parsing}
+            className="px-4 py-2 rounded-md font-medium border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            เคลียร์ไฟล์
+          </button>
+        )}
         {parsing && (
           <div className="flex items-center space-x-2 text-blue-600">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -767,9 +856,56 @@ function UploadItemsCard() {
         )}
       </div>
 
+      {/* Preview ข้อมูลที่อ่านได้จากไฟล์ (head 10 แถว) พร้อมสถานะตรง/ไม่ตรง format */}
+      {previewRows.length > 0 && (
+        <div className="mt-6">
+          <h4 className="text-sm font-semibold text-gray-800 mb-2">
+            ตัวอย่างข้อมูลจากไฟล์ (แสดง {previewRows.length} จาก {totalRowCount} แถว)
+          </h4>
+          <div className="overflow-x-auto border border-gray-200 rounded-lg max-h-96 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 sticky top-0">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium text-gray-700">#</th>
+                  <th className="px-3 py-2 text-left font-medium text-gray-700">title</th>
+                  <th className="px-3 py-2 text-left font-medium text-gray-700">text</th>
+                  <th className="px-3 py-2 text-left font-medium text-gray-700">domain</th>
+                  <th className="px-3 py-2 text-left font-medium text-gray-700">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {previewRows.map(({ index, row, validation }) => {
+                  const title = row?.title !== undefined && row?.title !== null ? String(row.title) : '';
+                  const text = row?.text !== undefined && row?.text !== null ? String(row.text) : '';
+                  return (
+                    <tr key={index} className={validation.ok ? '' : 'bg-red-50'}>
+                      <td className="px-3 py-2 text-gray-500 align-top">{index}</td>
+                      <td className="px-3 py-2 text-gray-700 align-top max-w-xs truncate" title={title}>{title || <span className="italic text-gray-400">ไม่มีค่า</span>}</td>
+                      <td className="px-3 py-2 text-gray-600 align-top max-w-sm truncate" title={text}>{text || <span className="italic text-gray-400">ไม่มีค่า</span>}</td>
+                      <td className="px-3 py-2 text-gray-500 align-top">{row?.domain || '-'}</td>
+                      <td className="px-3 py-2 align-top">
+                        {validation.ok ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">✅ พร้อมอัปโหลด</span>
+                        ) : (
+                          <span className="inline-flex flex-col items-start gap-1">
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">❌ ไม่ตรง format</span>
+                            <span className="text-xs text-red-600">{validation.reasons.join(', ')}</span>
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div className="mt-4">
         <div className="text-sm text-gray-700">
-          เตรียมอัปโหลด: <span className="font-medium">{parsedRows.length}</span> รายการ | 
+          ตรวจสอบแล้ว: <span className="font-medium">{totalRowCount}</span> แถว |
+          เตรียมอัปโหลด: <span className="font-medium">{parsedRows.length}</span> รายการ |
           เพิ่มสำเร็จ: <span className="font-medium text-green-700">{result.inserted}</span> |
           AI จะกำหนด clueWords สำหรับแต่ละรายการ
         </div>
