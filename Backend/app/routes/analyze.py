@@ -73,15 +73,20 @@ def analyze_submission(
 
         if is_correct:
             final_score = 25
-        
+
         if updated_clues:
             reasoning_points_pool = 75
             score_per_clue = reasoning_points_pool / len(updated_clues)
             for clue in updated_clues:
                 if clue.get("found_in_reason", False):
                     final_score += score_per_clue if is_correct else (score_per_clue / 3)
-        
-        final_score = min(100, int(final_score))
+
+            # หักคะแนนคำที่ผู้ใช้เลือกแต่ไม่ตรงกับ clue ของ AI เลย (เลือกคำผิด)
+            model_clue_words_lower = {c.get('word', '').lower() for c in updated_clues}
+            wrong_words = [w for w in lowercase_clues if w not in model_clue_words_lower]
+            final_score -= len(wrong_words) * score_per_clue
+
+        final_score = max(0, min(100, int(final_score)))
         
         # 4. สร้าง Feedback
         explanation_text = f"คุณวิเคราะห์ได้ตรงกับ AI! โมเดลเห็นว่านี่คือ '{'ข่าวจริง' if model_prediction_bool else 'ข่าวปลอม'}'" if is_correct else f"มุมมองของคุณต่างจาก AI เล็กน้อย โมเดลวิเคราะห์ว่าเป็น '{'ข่าวจริง' if model_prediction_bool else 'ข่าวปลอม'}'"

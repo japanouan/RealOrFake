@@ -322,25 +322,8 @@ export default function DailyChallenge() {
 
 // --- Feedback View ---
 function FeedbackView({ feedbackData, originalTitleWords, isLastQuestion, onNext, onHome }) {
-    const calculatedScore = useMemo(() => {
-        let score = 0;
-        const { correct, clue_words_analysis, submission } = feedbackData;
-        if (correct) score += 25;
-
-        const userSelectedWordsLower = (submission.userClues || []).map(w => w.toLowerCase());
-        const modelClueWordsLower = (clue_words_analysis || []).map(c => c.word.toLowerCase());
-
-        if (modelClueWordsLower.length > 0) {
-            const pointsPerClue = 75 / modelClueWordsLower.length;
-            let clueScore = 0;
-            userSelectedWordsLower.forEach(word => {
-                if (modelClueWordsLower.includes(word)) clueScore += pointsPerClue;
-                else clueScore -= pointsPerClue;
-            });
-            score += clueScore;
-        }
-        return Math.max(0, Math.round(score));
-    }, [feedbackData]);
+    // ใช้คะแนนจาก backend ตรงๆ (ค่าเดียวกับที่ถูกบันทึกและขึ้น leaderboard) ไม่คำนวณซ้ำฝั่ง frontend
+    const calculatedScore = feedbackData.score ?? 0;
 
     const scoreColor = calculatedScore >= 75 ? 'text-green-500' : calculatedScore >= 50 ? 'text-yellow-500' : 'text-red-500';
     const originalUserSelectedWords = feedbackData.submission.userClues || [];
