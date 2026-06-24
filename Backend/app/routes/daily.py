@@ -1,7 +1,7 @@
 # app/routes/daily.py
-from fastapi import APIRouter, Query, Depends
-from typing import Dict, List
-from app.services.db import generate_daily_challenge, get_firebase_service
+from fastapi import APIRouter, Query, Depends, HTTPException
+from typing import Any, Dict, List
+from app.services.db import generate_daily_challenge, get_firebase_service, get_challenge_items_for_today
 from datetime import date
 
 router = APIRouter()
@@ -18,6 +18,21 @@ def daily_challenge(
     if not challenge:
         return {"error": "Cannot generate daily challenge today."}
     return challenge
+
+@router.get("/challenges/today", response_model=List[Dict[str, Any]], tags=["challenges"], summary="Get today's challenges")
+def get_today_challenges():
+    """
+    ดึงรายการโจทย์ทั้งหมด (พร้อมเนื้อหาข่าวเต็ม) สำหรับ Daily Challenge ของวันนี้
+    """
+    try:
+        challenges = get_challenge_items_for_today()
+        if not challenges:
+            # คืน list ว่างแทน 404 เพื่อให้ Frontend จัดการง่ายขึ้น
+            return []
+        return challenges
+    except Exception as e:
+        print(f"Error fetching daily challenges: {e}")
+        raise HTTPException(status_code=500, detail="Internal error during challenge fetch.")
 
 @router.get("/dailychallenges/today/index", response_model=int)
 def daily_challenge_index(

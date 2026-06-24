@@ -1,6 +1,6 @@
 # app/routes/analyze.py
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Dict, Any, Optional
+from typing import Optional
 from datetime import date, datetime
 import re
 
@@ -8,7 +8,7 @@ from app.routes.leaderboard import update_leaderboard
 
 # === Import Dependencies & Logic ===
 from app.schemas import ChallengeFeedback, SubmissionIn
-from app.services.db import get_firebase_service, get_challenge_item_by_ref, save_submission, get_challenge_items_for_today, get_item_by_path, get_current_streak_status
+from app.services.db import get_firebase_service, get_challenge_item_by_ref, save_submission, get_current_streak_status
 from app.services.firebase_service import FirebaseService
 
 router = APIRouter()
@@ -161,23 +161,7 @@ def analyze_submission(
 
 # ====================================================
 #  3. UTILITY ENDPOINTS
+#  - /challenges/today และ /debug-db ถูกย้ายไปอยู่ที่ app/routes/admin.py
+#    (mount ใต้ /api/v1 และมี require_admin guard) เพื่อไม่ให้ซ้ำซ้อนและไม่มี auth หลุดมาบัง route ที่ป้องกันแล้ว
 # ====================================================
-@router.get("/challenges/today", response_model=List[Dict[str, Any]], tags=["challenges"])
-def get_today_challenges():
-    """ดึงรายการโจทย์ทั้งหมดสำหรับวันปัจจุบัน"""
-    try:
-        challenges = get_challenge_items_for_today()
-        if not challenges:
-            raise HTTPException(status_code=404, detail="No daily challenges found for today.")
-        return challenges 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal error during challenge fetch: {e}")
-
-@router.get("/debug-db/{path:path}", tags=["debug"])
-def debug_db(path: str, firebase_service: FirebaseService = Depends(get_firebase_service)):
-    """Endpoint สำหรับดึงข้อมูลดิบจาก Firebase ตาม Path"""
-    data = firebase_service.get_data(path)
-    if data is None:
-        raise HTTPException(status_code=404, detail=f"Data not found at path: {path}") 
-    return data
 

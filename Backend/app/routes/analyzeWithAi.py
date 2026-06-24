@@ -1,6 +1,5 @@
 # app/routes/analyzeWithAi.py
 from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Dict, Any
 from datetime import date, datetime
 import re
 import json
@@ -9,7 +8,7 @@ import os
 # Import Schemas ที่จำเป็นทั้งหมด
 from app.schemas import ChallengeFeedback, SubmissionIn, SubmissionReasonIn
 from app.routes.leaderboard import update_leaderboard
-from app.services.db import get_firebase_service, get_challenge_item_by_ref, save_submission, get_challenge_items_for_today
+from app.services.db import get_firebase_service, get_challenge_item_by_ref, save_submission
 from app.services.firebase_service import FirebaseService
 
 router = APIRouter()
@@ -214,23 +213,7 @@ def analyze_submission_with_reason(
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {e}")
 
 # ====================================================
-#  3. UTILITY ENDPOINTS (ไม่มีการเปลี่ยนแปลง)
+#  3. UTILITY ENDPOINTS
+#  - /challenges/today และ /debug-db ถูกย้ายไปอยู่ที่ app/routes/admin.py
+#    (mount ใต้ /api/v1 และมี require_admin guard) เพื่อไม่ให้ซ้ำซ้อนกัน
 # ====================================================
-@router.get("/challenges/today", response_model=List[Dict[str, Any]], tags=["challenges"])
-def get_today_challenges(firebase_service: FirebaseService = Depends(get_firebase_service)):
-    """ดึงรายการโจทย์ทั้งหมดสำหรับวันปัจจุบัน"""
-    try:
-        challenges = get_challenge_items_for_today(firebase_service)
-        if not challenges:
-            raise HTTPException(status_code=404, detail="No daily challenges found for today.")
-        return challenges 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal error during challenge fetch: {e}")
-
-@router.get("/debug-db/{path:path}", tags=["debug"])
-def debug_db(path: str, firebase_service: FirebaseService = Depends(get_firebase_service)):
-    """Endpoint สำหรับดึงข้อมูลดิบจาก Firebase ตาม Path"""
-    data = firebase_service.get_data(path)
-    if data is None:
-        raise HTTPException(status_code=404, detail=f"Data not found at path: {path}") 
-    return data
