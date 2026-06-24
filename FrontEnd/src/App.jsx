@@ -15,6 +15,7 @@ import Review from "./pages/Review.jsx";
 import Leaderboard from "./pages/Leaderboard.jsx";
 import Learn from "./pages/Learn.jsx";
 import Admin from "./pages/Admin.jsx";
+import AdminItemsManager from "./pages/AdminItemsManager.jsx";
 
 function App() {
   useEffect(() => {
@@ -62,6 +63,11 @@ function App() {
           <Route path="/admin" element={
             <ProtectedRoute requireAdmin={true}>
               <Admin />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/items" element={
+            <ProtectedRoute requireAdmin={true}>
+              <AdminItemsManager />
             </ProtectedRoute>
           } />
         </Routes>
