@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { resetUserRole } from "../utils/resetUserRole";
 import { db, auth } from "../firebase";
 import { onValue, ref, set, get } from "firebase/database";
 import {
@@ -403,7 +402,7 @@ export default function Admin() {
             <p className="text-lg text-gray-600">ยินดีต้อนรับ {currentUser?.displayName || 'Admin'}</p>
             <p className="text-sm text-gray-500">Email: {currentUser?.email}</p>
           </div>
-          <div className="flex items-center space-x-3">
+          {/* <div className="flex items-center space-x-3">
             <button 
               onClick={resetUserRole}
               className="bg-red-500 text-white px-4 py-2 rounded-xl font-medium hover:bg-red-600 transition-colors"
@@ -413,7 +412,7 @@ export default function Admin() {
             <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-xl font-medium">
               ADMIN
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* Tab Navigation */}
