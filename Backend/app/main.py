@@ -19,7 +19,7 @@ import torch.nn as nn
 # Internal imports
 from core.config import settings
 from app.routes import analyze as analyze_router # Router สำหรับ /analyze
-from app.routes import analyzeAdmin as analyze_admin_router
+from app.routes import admin as analyze_admin_router
 from app.routes import daily as daily_challenges # Router สำหรับ /challenges/today
 from app.routes import learn as learn # Router สำหรับ /challenges/today
 from app.routes import analyzeWithAi 
