@@ -506,7 +506,7 @@ export default function Review() {
               onClick={() => {
                 if (dataToUse.length === 0) {
                   // Navigate to learn page or daily challenge
-                  window.location.href = '/learn';
+                  window.location.href = '/challenge';
                 } else {
                   // Reset date filter
                   setSelectedDate('all');
